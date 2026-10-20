@@ -1,0 +1,55 @@
+# Alterações
+
+## 1.1.0 — conclusão das pendências de implementação
+
+- Backend `/api/data` e healthcheck incluídos: BCB/IBGE, notícias IBGE, comunicados Fed e amostras brapi opcionais. Todos os quatro feeds foram consultados com dados reais; validação, cache, limite de resposta, timeout e retentativas foram testados.
+- Categorias configuráveis com IDs, renomeação atômica das referências, arquivo/reativação e preservação de histórico e backups antigos. Categorias personalizadas exigem leitor 1.1.0 ou posterior.
+- Templates e validação de formulários extraídos para `form-utils.mjs`, com erros monetários e relacionais associados ao campo e preservação dos dados digitados.
+- Limite de plaintext/estado ampliado para 33 MiB, preservando margem para o catálogo na leitura de estados antigos próximos do limite anterior. Envelope criptografado permanece em 48 MiB.
+- Módulos formatados para revisão e manutenção. Política de conteúdo sem scripts ou estilos inline, lista pública restrita e backend privado não exposto como arquivo.
+- Docker/Compose com usuário sem privilégios, imagem fixada por digest, filesystem somente leitura, healthcheck e CI para Node 22/24 e imagem de produção. Procedimento de publicação e reversão em `DEPLOY.md`.
+- Regressões de categorias, formulários e backend adicionadas. Fluxos do cofre e layouts validados no Chromium e WebKit Linux. Firefox instalado, porém bloqueado no lançamento pelo contêiner; Safari/iOS físico e leitor de tela humano não foram executados.
+
+A publicação no endereço existente depende do mecanismo da hospedagem. O repositório e o pacote de código não alteram automaticamente o site. Sincronização e conexão bancária continuam integrações opcionais, sem contratação ou simulação nesta entrega.
+
+## 1.0.2 — revisão local
+
+Base: arquivos públicos da versão 1.0.1. Esta revisão não foi publicada no site.
+
+### Regras financeiras
+
+- Correção da seleção da última cotação ou posição registrada no mesmo dia e da ordem de novas operações após exclusões.
+- Validação de quantidades, arredondamento, desdobramentos, totais e tamanho do estado antes de persistir; frações inferiores à precisão admitida não são truncadas silenciosamente.
+- Validação de recorrências, datas e compras vinculadas a cartão. Uma compra de cartão não pode ser convertida em receita.
+- Índices de pagamentos, contas e cotações reduzem consultas repetidas em relatórios, faturas e exportações.
+
+### Importação e fontes públicas
+
+- Conciliação usa pagamentos efetivos, com data, valor e conta. Um compromisso ainda não pago não é tratado como movimentação bancária já importada.
+- Identificadores bancários são preservados por pagamento, inclusive em conciliações parciais. Linhas idênticas sem identificador mantêm sua multiplicidade, com aviso sobre duplicidade inferida.
+- Lotes são aplicados de forma atômica. Leitura de CSV/OFX, sinais, codificação e validação das linhas receberam correções.
+- Respostas de mercado são validadas; falhas parciais mantêm os dados anteriores com indicação de desatualização. Links de notícias ficam restritos a fontes oficiais HTTPS.
+
+### Cofre e armazenamento
+
+- Bloquear o cofre retira dados pessoais, filtros, arquivos selecionados e formulários da interface antes de aguardar a criptografia dos rascunhos. Uma falha ao guardar o rascunho não impede o bloqueio.
+- Repetir a mesma operação devolve o estado efetivamente salvo; reutilizar seu identificador com outro conteúdo gera conflito.
+- Cabeçalhos, registros e cópias anteriores são verificados. Registros ou checkpoints sem cabeçalho são preservados e não são substituídos por um espaço vazio; a recuperação exige ação explícita.
+- Resumo autenticado do estado detecta a mistura de registros antigos e atuais. A troca de chave regrava todos os registros e descarta cópias anteriores incompatíveis.
+- Exportação bruta e recuperação da cópia anterior ficam disponíveis no fluxo de abertura quando aplicável. Formatos criptográficos existentes foram mantidos, com validação de estrutura e tamanho antes da derivação de chave.
+
+### Interface e entrega
+
+- Ajustes de navegação por teclado, retorno de foco, mensagens de erro e nomes acessíveis dos controles.
+- Lançamentos se adaptam a telas pequenas; navegação inferior reserva seu espaço real. O gráfico semanal ganhou tabela acessível e o orçamento excedido tem indicação textual.
+- Ocultar valores também protege detalhes de gráficos. Rotas inválidas são rejeitadas e as operações do controlador são serializadas.
+- O service worker instala o conjunto completo de uma versão e mantém a versão usada por outras abas. A ativação da atualização é explícita.
+- Servidor local sem dependências npm, cabeçalhos de segurança, testes nativos e CI em Node 22/24.
+
+### Verificação e limites
+
+A suíte nativa reúne 110 testes. Scripts adicionais verificam os fluxos reais em Chromium, usando dados fictícios; os comandos estão no README.
+
+O schema continua na versão 3; `payments.importKey` é opcional. Backups criptografados continuam no envelope versão 1. Registros antigos sem resumo de integridade são aceitos e atualizados na próxima gravação. Dados inconsistentes são preservados para recuperação, sem correção silenciosa de valores.
+
+O backend de `/api/data` não foi disponibilizado. O servidor local retorna HTTP 503 para esse serviço. Não foram adicionados sincronização entre dispositivos, conexão bancária, recuperação de senha por servidor ou cálculo fiscal. A criptografia protege os dados armazenados; não impede acesso por um dispositivo comprometido nem a restauração completa de uma cópia antiga válida.

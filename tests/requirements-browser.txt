@@ -1,0 +1,2 @@
+# Browser automation only; the application runtime has no Python dependencies.
+playwright==1.62.0

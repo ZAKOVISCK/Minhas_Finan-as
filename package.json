@@ -1,0 +1,16 @@
+{
+  "name": "minhas-financas",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Finanças pessoais locais com cofre criptografado no navegador.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node --watch server.mjs",
+    "start": "node server.mjs",
+    "check": "node scripts/check-syntax.mjs",
+    "test": "npm run check && node --test tests/*.test.mjs"
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "files": [
+    {
+      "name": "app.js",
+      "bytes": 52160,
+      "sha256": "320ade6d5ac8638fc8c21729977afe27683de8fe3f8f9a2fa9e199f84a2f1160"
+    },
+    {
+      "name": "crypto.mjs",
+      "bytes": 3552,
+      "sha256": "bd9830288d42253d79f5b2165f7fe127b18e12db4165026daaab6452b9e4b5d3"
+    },
+    {
+      "name": "finance.mjs",
+      "bytes": 20630,
+      "sha256": "4e723161215085122f87e414195bb93f16d8b7f48e5f076efc7f41b774f75c99"
+    },
+    {
+      "name": "icon-192.png",
+      "bytes": 1174,
+      "sha256": "6455f368d25120447c288f1397038b0aabfe46daad39c757a753e15155838776"
+    },
+    {
+      "name": "icon-512.png",
+      "bytes": 3886,
+      "sha256": "2a6c1a3f6f1d95562bede192f599f0008d4f393cd8496586367f0f74717f3c42"
+    },
+    {
+      "name": "icon.svg",
+      "bytes": 253,
+      "sha256": "9eaf7b4db4ce9f08009cc94b36eefc5daa8e89707513a6c177bdb873efff3f17"
+    },
+    {
+      "name": "imports.mjs",
+      "bytes": 5672,
+      "sha256": "50f647903d7b1b58b8d32a789c37308dd610e8b9d71c53e650807d3859c9709f"
+    },
+    {
+      "name": "index.html",
+      "bytes": 3497,
+      "sha256": "fa34006be625de866217780e7f5c8cc784796d950e11518aae1a8273eb766d82"
+    },
+    {
+      "name": "legacy-finance.mjs",
+      "bytes": 7510,
+      "sha256": "1742c21a7820f01078ccc39dca6682f408981fc385a166a95a2096b4efe631e4"
+    },
+    {
+      "name": "manifest.webmanifest",
+      "bytes": 505,
+      "sha256": "5dea15a60615027e2bc6de62d9251dae452da8788c64fad746ab8bb3bc0a6520"
+    },
+    {
+      "name": "market.mjs",
+      "bytes": 1847,
+      "sha256": "330a5a61278d77ebd6ee9d41d93e7d7d77645d28fe1eaf5c768d6c85d2d7bce4"
+    },
+    {
+      "name": "storage.mjs",
+      "bytes": 7669,
+      "sha256": "a1545e12097c9200ce8e5259226c4624717dac4e64a1864445e8f0a0da6118a5"
+    },
+    {
+      "name": "styles.css",
+      "bytes": 20771,
+      "sha256": "4693e7b5aa06a6c8cfa252d1235e355439f11976606abc5676644b0d5cd378f4"
+    },
+    {
+      "name": "sw.js",
+      "bytes": 1229,
+      "sha256": "0fa295d09199d15babad221db90635c17d2ba25ecc27332ea29763a646f43baa"
+    },
+    {
+      "name": "views.mjs",
+      "bytes": 32905,
+      "sha256": "1fdc7406534eaec3b6a609df0e000c26d12a39f3e94c7502efbd7920ddd837dd"
+    }
+  ],
+  "source": "https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site/",
+  "version": "1.0.1",
+  "reason": "Repositório remoto vazio na coleta; frontend público importado como base rastreável."
+}
