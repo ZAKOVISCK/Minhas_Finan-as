@@ -10,7 +10,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 BASE=sys.argv[1] if len(sys.argv)>1 else 'http://127.0.0.1:3000'
 OUT=Path(sys.argv[2] if len(sys.argv)>2 else '/tmp/minhas-financas-view-tests')
 OUT.mkdir(parents=True,exist_ok=True)
@@ -20,7 +20,7 @@ with sync_playwright() as pw:
  browser=pw.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH','/usr/bin/chromium'),headless=True,args=['--no-sandbox'])
  context=browser.new_context(locale='pt-BR',timezone_id='America/Sao_Paulo',service_workers='block',reduced_motion='reduce')
  page=context.new_page();page.on('pageerror',lambda e:results['errors'].append(str(e)))
- page.goto(BASE,wait_until='networkidle');page.locator('main[aria-busy=false]').wait_for()
+ page.goto(BASE,wait_until='networkidle');expect(page.locator('#main')).to_have_attribute('aria-busy','false')
  seed_fixture(page)
  for width,height in [(1440,1000),(390,844),(320,568),(844,390),(768,1024)]:
   page.set_viewport_size({'width':width,'height':height})

@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 ORIGIN=(sys.argv[1] if len(sys.argv)>1 else 'http://127.0.0.1:3000').rstrip('/')
 if urlparse(ORIGIN).hostname not in ('localhost','127.0.0.1','::1'):
@@ -22,7 +22,8 @@ blocked_requests=[]
 
 def ready(page):
     page.goto(ORIGIN+'/',wait_until='networkidle')
-    page.locator('main[aria-busy="false"]').wait_for()
+    expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+    expect(page.locator('#access-screen')).to_be_visible()
 
 
 def raw(page,slot):
