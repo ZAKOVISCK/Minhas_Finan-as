@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as F from '../finance.mjs';
-import { field, select, amountField, dateField, FormValidationError, validateFormData } from '../form-utils.mjs';
+import * as F from '../public/finance.mjs';
+import { field, select, amountField, dateField, FormValidationError, validateFormData } from '../public/form-utils.mjs';
 
 const TODAY = '2026-10-20';
 function fixture() {

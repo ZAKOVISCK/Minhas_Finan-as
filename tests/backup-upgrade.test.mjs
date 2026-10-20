@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { emptyState, validateState, serializeBackup, parseBackup, MAX_BACKUP_BYTES } from '../finance.mjs';
+import { emptyState, validateState, serializeBackup, parseBackup, MAX_BACKUP_BYTES } from '../public/finance.mjs';
 
 test('a schema 3 backup at the former 32 MiB boundary remains readable after adding the category catalog', () => {
   const oldLimit = 32 * 1024 * 1024;

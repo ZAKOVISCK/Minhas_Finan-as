@@ -2,18 +2,18 @@
 Run: python3 tests/storage.browser.py [--root DIR] [--scenario NAME]
 Requires Python Playwright and Chromium; no live app or external network is used.
 """
-import argparse, json
+import argparse, json, os
 from pathlib import Path
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
 
 parser=argparse.ArgumentParser()
-parser.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[1])
+parser.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[1]/'public')
 parser.add_argument('--scenario',default='')
 parser.add_argument('--output',type=Path)
 args=parser.parse_args()
 with sync_playwright() as pw:
-    browser=pw.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
+    browser=pw.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH','/usr/bin/chromium'),headless=True,args=['--no-sandbox'])
     context=browser.new_context(locale='pt-BR',timezone_id='America/Sao_Paulo')
     def serve(route):
         name=urlparse(route.request.url).path.lstrip('/')

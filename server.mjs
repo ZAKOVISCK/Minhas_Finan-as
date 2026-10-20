@@ -3,44 +3,26 @@ import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { resolve } from "node:path";
-import { createMarketService } from "./market-server.mjs";
+import { createMarketService } from "./lib/market-server.mjs";
+import { PUBLIC_FILES } from "./lib/public-files.mjs";
+import { SECURITY_HEADERS } from "./lib/security.mjs";
+import { execFileSync } from "node:child_process";
 
-const ROOT = fileURLToPath(new URL(".", import.meta.url));
-const PUBLIC_FILES = new Set([
-  "index.html",
-  "styles.css",
-  "app.js",
-  "finance.mjs",
-  "legacy-finance.mjs",
-  "storage.mjs",
-  "crypto.mjs",
-  "views.mjs",
-  "imports.mjs",
-  "market.mjs",
-  "form-utils.mjs",
-  "sw.js",
-  "manifest.webmanifest",
-  "icon.svg",
-  "icon-192.png",
-  "icon-512.png",
-]);
-const TYPES = {
-  html: "text/html; charset=utf-8",
-  css: "text/css; charset=utf-8",
-  js: "text/javascript; charset=utf-8",
-  mjs: "text/javascript; charset=utf-8",
-  webmanifest: "application/manifest+json; charset=utf-8",
-  svg: "image/svg+xml",
-  png: "image/png",
-};
+const ROOT = fileURLToPath(new URL("./public/", import.meta.url));
+const HTML = fileURLToPath(new URL("./lib/shell.html", import.meta.url));
+const {version}=JSON.parse(await readFile(new URL('./package.json',import.meta.url),'utf8'));
+let sourceCommit=process.env.APP_SOURCE_COMMIT;
+if(!sourceCommit){try{sourceCommit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();}catch{sourceCommit=null;}}
+const release={version,commit:sourceCommit,repository:'https://github.com/ZAKOVISCK/Minhas_Finan-as'};
 
 export function createAppServer({
   root = ROOT,
   marketService = createMarketService(),
 } = {}) {
   return createServer(async (request, response) => {
-    response.setHeader("X-Content-Type-Options", "nosniff");
-    response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    for(const [name,value]of Object.entries(SECURITY_HEADERS))response.setHeader(name,value);
+    if(sourceCommit)response.setHeader("X-App-Source-Commit",sourceCommit);
+    response.setHeader("Referrer-Policy", "no-referrer");
     response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
     response.setHeader("Cache-Control", "no-cache");
     const send = (status, text, type = "text/plain; charset=utf-8") => {
@@ -58,6 +40,7 @@ export function createAppServer({
     } catch {
       return send(400, "Endereço inválido.");
     }
+    if (pathname === "/version.json")return send(200,JSON.stringify(release),"application/json; charset=utf-8");
     if (pathname === "/api" || pathname.startsWith("/api/")) {
       const json = (status, body) =>
         send(status, JSON.stringify(body), "application/json; charset=utf-8");
@@ -95,20 +78,14 @@ export function createAppServer({
     }
     const filename = pathname === "/" ? "index.html" : pathname.slice(1);
     // Serve only the public application: never expose .git, backups, or local configuration.
-    if (!PUBLIC_FILES.has(filename))
+    if (!Object.hasOwn(PUBLIC_FILES,filename))
       return send(404, "Arquivo não encontrado.");
     try {
-      const body = await readFile(resolve(root, filename));
+      const body = await readFile(filename === "index.html" && root === ROOT ? HTML : resolve(root, filename));
       const etag = '"' + createHash("sha256").update(body).digest("hex") + '"';
       response.setHeader("ETag", etag);
       if (filename === "sw.js")
         response.setHeader("Service-Worker-Allowed", "/");
-      if (filename === "index.html") {
-        response.setHeader(
-          "Content-Security-Policy",
-          "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
-        );
-      }
       if (request.headers["if-none-match"] === etag) {
         response.writeHead(304);
         return response.end();
@@ -116,7 +93,7 @@ export function createAppServer({
       return send(
         200,
         body,
-        TYPES[filename.split(".").pop()] || "application/octet-stream",
+        PUBLIC_FILES[filename],
       );
     } catch (error) {
       return send(

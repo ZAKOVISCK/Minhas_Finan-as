@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const source = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
+const source = await readFile(new URL('../public/sw.js', import.meta.url), 'utf8');
 const origin = 'https://financas.test';
-const current = 'mf-core-1.1.0';
-const previous = 'mf-core-1.0.2';
+const current = 'mf-core-1.1.1';
+const previous = 'mf-core-1.1.0';
 
 function harness({ shared, clients = [], failPath = '' } = {}) {
   const stores = shared || new Map();
@@ -144,7 +144,7 @@ test('an evicted asset fails explicitly rather than mixing in a different networ
 });
 
 test('the document and package identify the installed release', async () => {
-  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../lib/shell.html', import.meta.url), 'utf8');
   const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
   assert.equal(current, 'mf-core-' + pkg.version);
   assert.ok(source.includes("const VERSION = '" + current + "'"));

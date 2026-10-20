@@ -1,93 +1,67 @@
-# Minhas finanças
+# Minhas Finanças 1.1.1
 
-Aplicativo de finanças pessoais com contas, pagamentos parciais, transferências, cartões, parcelas, planejamento, recorrências e investimentos. A demonstração fica separada do cofre pessoal, que começa vazio e usa criptografia local no navegador.
+Finanças pessoais locais, com cofre criptografado, demonstração separada, controle financeiro, carteira e fontes econômicas públicas. Sem assinatura, credenciais bancárias ou APIs pagas.
 
-A versão **1.1.0** inclui frontend, backend de fontes públicas, testes e configuração de produção. O frontend original veio dos arquivos públicos da versão 1.0.1; o backend desta entrega foi implementado neste projeto. [CHANGELOG.md](CHANGELOG.md) descreve as mudanças, [AUDITORIA.md](AUDITORIA.md) registra resultados e limites, e [DEPLOY.md](DEPLOY.md) explica publicação e reversão. Código no GitHub e site publicado são entregas distintas: o endereço existente precisa receber a versão pelo mecanismo da hospedagem.
+Site original: https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site .
 
-## Executar
+Este repositório contém o **projeto completo da publicação Sites**, incluindo os assets reais, o servidor Worker, a alternativa Node, a configuração de build e todos os testes. A revisão 1.1.1 integra a correção de compatibilidade que a publicação 1.1.0 acrescentou ao GitHub original. O histórico anterior é preservado; `release/` é somente a referência integral de `main@0c22b907b2f89c79ceb81d9e414a9cea4b4697f2`, sem uso no runtime atual.
 
-Requer Node.js 22 ou posterior. O runtime não tem dependências npm para instalar.
+## Instalação e execução
 
-```sh
-npm start
-```
-
-O servidor usa `127.0.0.1:3000`. `npm run dev` reinicia o processo ao editar arquivos. `HOST` e `PORT` ajustam a escuta; em produção, use a configuração da hospedagem ou o Docker/Compose fornecido. O aplicativo deve ser servido na raiz da mesma origem HTTPS. Não há etapa de build nem banco de dados financeiro no servidor.
-
-Em ambientes com proxy, Node 24 pode ser iniciado com `NODE_USE_ENV_PROXY=1 npm start`, preservando a configuração de confiança dos certificados. Em uma rede comum essa opção é desnecessária.
-
-O armazenamento pertence ao protocolo, hostname e porta do navegador. Mudar esse endereço abre outro espaço de dados. Exporte um backup antes de uma mudança de origem.
-
-## Recursos concluídos
-
-- Contas e saldos iniciais datados; vencimento, competência e pagamentos separados.
-- Transferências neutras nos relatórios de receitas/despesas; compras parceladas e pagamentos de fatura separados.
-- Categorias configuráveis: adicionar, renomear, arquivar e reativar. Renomear atualiza lançamentos, orçamentos e recorrências. Arquivar mantém o histórico; recorrências existentes podem ser pausadas separadamente.
-- Cofre AES-GCM com senha local, bloqueio manual/automático, backup criptografado e recuperação da cópia anterior.
-- CSV/OFX com prévia, conciliação parcial, seleção em várias páginas e deduplicação por pagamentos efetivos.
-- Interface móvel, tabela semanal acessível, paginação, foco e erros associados aos campos.
-- Núcleo offline com atualização explícita e arquivos coerentes por versão.
-- Backend gratuito de indicadores, notícias oficiais e amostras de ações opcionais.
-
-## Testes
+Node 22.13 ou posterior e pnpm 11.25.0:
 
 ```sh
+npm install --global pnpm@11.25.0
+pnpm install --frozen-lockfile
 npm test
+pnpm typecheck
+pnpm build
+node scripts/check-worker-build.mjs
 ```
 
-O comando verifica a sintaxe de todos os arquivos JavaScript e executa as regressões nativas: finanças, categorias, formulários, criptografia, importação, mercado, armazenamento, servidor e service worker. `npm run check` executa somente a verificação de sintaxe. A CI usa Node 22/24 e testa a imagem de produção.
+`pnpm dev` inicia o desenvolvimento Vinext/Worker. Depois do build, `pnpm start` executa o Worker local pelo Wrangler. Esses comandos não publicam o app. Não é necessário autenticar o Wrangler para os testes locais.
 
-Os testes de navegador usam Python com `playwright`, Chromium e dados fictícios em perfis temporários. Com o servidor ativo em outro terminal:
+Para o servidor Node de desenvolvimento/teste e a alternativa de hospedagem Node:
 
 ```sh
-python tests/app.browser.py
-python tests/categories.browser.py
-python tests/security-vault.py --base-url http://127.0.0.1:3000
-python tests/imports.browser.py
-python tests/recovery.browser.py
-python tests/browser_views.py
-python tests/compat.browser.py --browser chromium
+npm run start:node
 ```
 
-O teste isolado de IndexedDB/WebCrypto dispensa o servidor:
+Escuta padrão: `http://127.0.0.1:3000`. O runtime Node não precisa das dependências de frontend; `node server.mjs` funciona com os arquivos do checkout. O Docker usa esse servidor, com usuário sem privilégios. O domínio original usa o Worker.
+
+## Organização
+
+- `public/`: módulos financeiros, controlador, views, estilos, ícones, manifest e SW.
+- `lib/shell.html`: HTML entregue nas rotas `/` e `/index.html`.
+- `lib/market-server.mjs`: consultas públicas com destinos fixos, cache, validação e limites.
+- `lib/market-http.mjs`: adaptação segura do transporte para o Worker.
+- `lib/static-http.mjs`: cabeçalhos de todos os assets, preservando MIME, ETag, HEAD e 304.
+- `build/sites-worker.ts`, `vite.config.ts`, `.openai/hosting.json`: projeto original e build da hospedagem. A integração Sites é preservada.
+- `server.mjs`, `Dockerfile`, `compose.yaml`: execução Node reproduzível.
+- `tests/`: suítes nativas e de navegador sobre os arquivos efetivamente publicados, incluindo fixtures sintéticas da versão 1.0.1.
+- `UPSTREAM.json`: versão, referências anteriores e SHA-256 de cada arquivo público.
+
+## Testes de navegador
+
+O servidor de teste deve ser local e usar perfis descartáveis. Não abra cofres reais:
 
 ```sh
-python tests/storage.browser.py
+python -m pip install -r tests/requirements-browser.txt
+python -m playwright install --with-deps chromium firefox webkit
+python tests/compat.browser.py --browser all --output /tmp/minhas-financas-compat
+python tests/run-browser-suites.py --output /tmp/minhas-financas-additional
 ```
 
-A suíte de compatibilidade aceita `--browser chromium|firefox|webkit|all`, endereço local, executável e diretório de evidências. Em um runner com permissão de instalar dependências, `python -m playwright install --with-deps firefox webkit` prepara as engines adicionais. Nesta nuvem, WebKit foi validado com bibliotecas em prefixo local e um helper; os detalhes estão nas evidências da entrega. Firefox foi instalado, mas seu processo não iniciou neste contêiner. No runner independente da [CI](https://github.com/ZAKOVISCK/Minhas_Finan-as/actions/runs/39440149740), Chromium, Firefox e WebKit foram executados e aprovados. WebKit Linux não equivale a Safari/iOS físico. Os testes não substituem verificação com teclado virtual e leitor de tela em aparelhos reais.
+A CI executa Node 22/24, TypeScript/build do Worker, Docker, as três engines e as suítes complementares Chromium. Contagens nativas, cenários de navegador e combinações de telas são apresentadas separadamente. Um cenário bloqueado não é aprovado. As suítes complementares têm sobreposição de cobertura e não são somadas à compatibilidade.
 
-## Fontes públicas
+## Dados, atualização e publicação
 
-`GET /api/data?feed=macro|brazil|global|samples` é atendido pelo servidor incluído. `/api/health` confirma a disponibilidade do processo, sem consultar fontes externas.
+O mesmo domínio e o IndexedDB são mantidos. Schema 3, envelope 1, AES-GCM e KDF permanecem compatíveis. A correção da primeira gravação de cofres 1.0.1 é mantida; uma troca parcial de KDF é recusada antes de tentar abrir a raiz. Trocas completas de senha recriptografam todos os registros.
 
-| Feed | Conteúdo | Fonte |
-|---|---|---|
-| `macro` | Selic, IPCA mensal/acumulado e PTAX de fechamento | Banco Central e IBGE via SGS |
-| `brazil` | Publicações oficiais brasileiras | Agência IBGE Notícias |
-| `global` | Comunicados de política monetária, em inglês | Federal Reserve |
-| `samples` | Amostras de PETR4 e VALE3, mediante ação explícita | brapi |
+Históricos de transferências, operações e proventos têm paginação independente e ações até o registro mais antigo. Os cálculos usam o conjunto completo, independentemente da página. A navegação de páginas não grava alterações financeiras.
 
-O servidor consulta destinos fixos HTTPS, valida conteúdo/datas, compartilha consultas simultâneas e usa cache, timeout e retentativas limitadas. Não aceita URLs nem recebe registros financeiros pelo endpoint. Falhas de fonte aparecem com uma mensagem; dados anteriores são identificados como desatualizados. Uma falha não vira cotação zero. Os valores são referências com data, não uma garantia de preços em tempo real. A disponibilidade dos provedores gratuitos pode variar.
+O cache `mf-core-1.1.1` instala todos os assets de forma atômica. **Atualizar aplicativo** ativa a versão aguardando; as outras abas preservam seus arquivos até recarregar. Não limpe os dados do site para atualizar.
 
-A saída de rede precisa alcançar `api.bcb.gov.br`, `olinda.bcb.gov.br`, `servicodados.ibge.gov.br`, `www.federalreserve.gov` e, para as amostras, `brapi.dev`. Não são necessárias chaves de API para os recursos públicos implementados e validados.
+`/version.json` e `X-App-Source-Commit` identificam o commit GitHub usado no build publicado. O commit interno Sites e o commit GitHub podem ter pais diferentes, mas devem ter a mesma árvore de arquivos. O procedimento está em [DEPLOY.md](DEPLOY.md); as correções e limites em [AUDITORIA.md](AUDITORIA.md).
 
-## Offline e atualizações
-
-Após a primeira instalação conectada concluir, o service worker serve HTML, módulos, estilos e ícones do mesmo cache de versão, inclusive offline. Dados públicos dependem de conexão. Instalação incompleta preserva a versão anterior. **Atualizar aplicativo** ativa uma versão aguardando; conclua os rascunhos antes de usá-la. Outras abas mantêm seus arquivos até recarregar.
-
-Ao publicar, altere o identificador em `sw.js` e os rótulos em `package.json`, `index.html` e `views.mjs`. Publique todos os arquivos da versão juntos. Não reutilize cache para conteúdo diferente.
-
-Se for necessário reparar somente o cache do programa, remova o service worker e os caches `mf-core-*`/`mf-worker-meta` nas ferramentas do navegador e recarregue com conexão. **Limpar dados do site também apaga o cofre IndexedDB**. O cache offline não substitui backup.
-
-## Backup, compatibilidade e recuperação
-
-O backup padrão do cofre é criptografado e exige sua senha para restaurar. Faça a exportação em Configurações, guarde fora do navegador e use **Testar restauração** para verificar o arquivo. CSV e impressão contêm dados legíveis. O limite do estado/JSON é 33 MiB; o envelope de backup criptografado admite 48 MiB. O mesmo limite de plaintext vale para validação, criptografia e leitura.
-
-O schema continua em 3 e o envelope criptografado em 1. Backups anteriores são lidos pela versão 1.1.0. O catálogo de categorias é compatível na leitura dos dados antigos. Depois de criar ou renomear categorias personalizadas, mantenha **1.1.0 ou posterior**: versões 1.0.x não reconhecem esses nomes. Atualize abas antigas antes de recarregar os registros. Reverter somente o servidor não migra os dados do navegador para um formato antigo.
-
-Registros ou cópias anteriores sem cabeçalho são preservados. A abertura do cofre oferece exportação bruta para recuperação e, quando houver checkpoint válido, recuperação após senha e confirmação. A cópia bruta conserva material criptografado e metadados; não é um backup normal pronto para restaurar. A recuperação substitui o estado atual pela cópia escolhida.
-
-Cofres antigos sem resumo autenticado de integridade continuam legíveis e recebem essa proteção na próxima gravação. Ela detecta mistura de registros, mas não impede substituir o armazenamento inteiro por uma cópia antiga válida. A senha não é recuperável pelo servidor. Limpar o perfil, perder o dispositivo ou remover os dados do site pode eliminar o cofre. Se o armazenamento estiver indisponível, o aviso de sessão temporária exige exportar antes de fechar.
-
-O produto permanece local, sem assinatura obrigatória, sincronização entre dispositivos, integração bancária ou cálculo fiscal automático. Essas integrações exigem arquitetura, provedores e credenciais próprios; não são simuladas pelo aplicativo.
+BCB/IBGE, notícias IBGE, comunicados Fed e duas amostras brapi dependem de conexão e disponibilidade externa. Não há promessa de bolsa completa ou cotação em tempo real. Cofres, senhas e registros financeiros não são enviados às APIs. Backups externos continuam necessários.

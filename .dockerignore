@@ -1,11 +1,7 @@
 *
 !package.json
-!*.mjs
-!app.js
-!styles.css
-!index.html
-!sw.js
-!manifest.webmanifest
-!icon.svg
-!icon-192.png
-!icon-512.png
+!server.mjs
+!lib/
+!lib/**
+!public/
+!public/**

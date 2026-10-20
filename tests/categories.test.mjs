@@ -4,8 +4,8 @@ import {
   CATEGORIES,MAX_CATEGORIES,emptyState,validateState,demo,categoryList,categoryNames,
   categoryUsage,addCategory,updateCategory,serializeBackup,parseBackup,balances,summary,
   generateRecurrences,ledgerCSV,
-} from '../finance.mjs';
-import {renderView,currency} from '../views.mjs';
+} from '../public/finance.mjs';
+import {renderView,currency} from '../public/views.mjs';
 
 const AS_OF='2026-10-20';
 const MONTH='2026-10';

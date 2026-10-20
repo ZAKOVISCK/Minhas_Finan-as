@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { emptyState, validateState, outstanding, balances } from '../finance.mjs';
-import { parseCSV, suggestMapping, previewCSV, previewOFX, importKey, planImport, applyImport, reconcile } from '../imports.mjs';
+import { emptyState, validateState, outstanding, balances } from '../public/finance.mjs';
+import { parseCSV, suggestMapping, previewCSV, previewOFX, importKey, planImport, applyImport, reconcile } from '../public/imports.mjs';
 
 function fixture() {
   const state = emptyState('Teste', '2025-01-01');

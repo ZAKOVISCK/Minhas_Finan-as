@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {demo} from '../finance.mjs';
-import {marketState} from '../market.mjs';
-import {renderView,ledgerRows,filteredEntries,currency,routes} from '../views.mjs';
+import {demo} from '../public/finance.mjs';
+import {marketState} from '../public/market.mjs';
+import {renderView,ledgerRows,filteredEntries,currency,routes} from '../public/views.mjs';
 
 function context(overrides={}){
  return {state:demo('2000-10-20'),month:'2000-10',view:'inicio',slot:'demo',hidden:false,search:'',typeFilter:'all',statusFilter:'all',scope:'month',page:1,...overrides};

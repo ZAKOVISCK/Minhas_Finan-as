@@ -1,69 +1,56 @@
-# Publicação e operação
+# Publicação da versão 1.1.1 no projeto original
 
-O aplicativo inclui um servidor Node.js 22 ou posterior e o backend de fontes públicas na mesma origem. Não precisa de banco de dados no servidor nem de dependências npm. Os cofres financeiros permanecem no navegador de cada pessoa. O cache público do processo pode ser descartado a cada reinício.
+Projeto Sites `appgprj_6ad60d588e3c819189574322fd3a67a9`; origem HTTPS preservada:
+https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site . Audiência pública, sem login de plataforma. Não adicionar D1/R2 nem transferir cofres ao servidor.
 
-Este arquivo contém procedimentos de publicação; sua existência não significa que o endereço `chatgpt.site` já foi atualizado. Para atualizar esse endereço é necessário o projeto ou mecanismo de publicação que o controla. Fazer push ao GitHub só publica um site quando uma integração da hospedagem foi configurada para isso.
+## Preparar e verificar
 
-## Antes da publicação
+1. Confira o HEAD atual do Site e do GitHub. Concilie alterações posteriores antes de editar. Não force refs nem reescreva histórico.
+2. Instale as dependências do lockfile e execute os comandos de teste/build do README. O Node serve os mesmos arquivos de `public/` e `lib/shell.html`; a CI usa estados fictícios e perfis temporários.
+3. Se os assets mudarem, atualize a versão em `package.json`, `lib/security.mjs`, HTML, interface e `public/sw.js`. Rode `node scripts/release-manifest.mjs` para atualizar os hashes.
+4. A CI deve executar as suítes nativas sobre os módulos atuais, não sobre a referência arquivada em `release/`. Contabilize cenários bloqueados e falhos separadamente.
 
-1. Execute `npm test` no checkout da versão que será publicada.
-2. Confira os testes de navegador descritos no README e o número de versão dos assets.
-3. Registre o commit ou arquivo de distribuição escolhido. Guarde também a imagem anterior para reversão.
-4. Publique na raiz da **mesma origem HTTPS** existente. Protocolo, hostname e porta identificam o armazenamento do navegador. Mudar esse endereço abre outro espaço de dados; faça backup e restauração explícita se a mudança for necessária.
+## Assets, CSP e APIs
 
-Não use uma hospedagem somente estática para a entrega completa: `/api/data` precisa executar o servidor. No proxy reverso, encaminhe os caminhos da aplicação e `/api/data` ao mesmo processo, preserve o cabeçalho Host público, os cabeçalhos de segurança enviados pelo servidor e forneça HTTPS. Não exponha `.git`, backups, relatórios de testes ou arquivos do ambiente como conteúdo estático.
+`vite.config.ts` configura `assets.binding=ASSETS` e `assets.run_worker_first=true`. O Worker valida a lista fechada de arquivos e os serve via `env.ASSETS.fetch`, acrescentando os cabeçalhos em todas as respostas, incluindo HEAD/304: `nosniff`, CORP `same-origin`, CSP sem inline/eval, cache revalidado e escopo `/` para o SW. `_headers` não é usado como garantia de segurança.
 
-## Executar com Docker
+O build deve preservar essa configuração no `dist/server/wrangler.json`. Execute `node scripts/check-worker-build.mjs` e confira os cabeçalhos novamente no endereço público após publicar. Apenas encontrar o código no arquivo não conclui essa verificação.
 
-A imagem usa Node 24.19.0 sobre Debian Bookworm, executa como usuário `node` e copia apenas o programa e seus assets. A imagem base está fixada por versão e digest verificado no Dockerfile; atualizações de segurança devem passar pelos testes antes de trocar essa referência.
+`/api/data?feed=macro|brazil|global|samples` e `/api/health` permanecem na mesma origem. A saída HTTPS usa destinos fixos `api.bcb.gov.br`, `olinda.bcb.gov.br`, `servicodados.ibge.gov.br`, `www.federalreserve.gov` e `brapi.dev`. Sem chaves obrigatórias. O adaptador converte `redirect:error` em `manual` e recusa 3xx sem seguir o redirecionamento. Não ampliar a CSP do navegador para essas fontes: as consultas ocorrem no servidor.
 
-```sh
-docker build --tag minhas-financas:1.1.0 .
-docker run --detach --name minhas-financas \
-  --publish 127.0.0.1:3000:3000 \
-  --read-only --cap-drop ALL \
-  --security-opt no-new-privileges \
-  minhas-financas:1.1.0
-```
+## Proveniência exata
 
-O serviço escuta `0.0.0.0:3000` dentro do contêiner. A porta no host fica restrita à máquina local para uso por um proxy HTTPS. O healthcheck solicita apenas `/`; não depende das fontes externas. Não é necessário montar volume para os cofres, pois esses dados não são armazenados no contêiner.
+Sincronize a árvore completa de arquivos rastreados do projeto com um commit no GitHub, preservando `main` como ancestral. Nunca copie `.git`, perfis de navegador, `.env`, tokens, caches, node_modules, rascunhos ou dados financeiros.
 
-Também há uma configuração Compose equivalente:
+O build usa `APP_SOURCE_COMMIT` se informado, ou o HEAD do checkout como padrão. Ao compilar o projeto Sites a partir de um checkout com histórico próprio, informe o SHA GitHub completo correspondente à mesma árvore:
 
 ```sh
-RELEASE_TAG=1.1.0 docker compose up --detach --build
-docker compose ps
-docker compose logs --tail 50
+APP_SOURCE_COMMIT=<SHA_GITHUB_DE_40_CARACTERES> pnpm build
 ```
 
-Use `APP_PORT` para escolher uma porta local livre. A alteração dessa porta atrás do proxy não muda a origem pública; acessar a aplicação diretamente por outra porta muda o armazenamento visto pelo navegador.
+`/version.json` e os cabeçalhos públicos identificam esse SHA GitHub. Confirme que `git rev-parse HEAD^{tree}` dos dois commits coincide; somente ter a mesma versão nominal não basta. O commit Sites é registrado pela publicação nativa.
 
-## Executar sem Docker
+## Publicar no Sites
 
-Use um usuário sem privilégios e o gerenciador de processos fornecido pela hospedagem:
+A publicação exige acesso de edição ao projeto original pelo Sites. O GitHub por si só não altera esse domínio. Use o helper oficial de origem para abrir/sincronizar o checkout e empacotar a versão, mantendo `.openai/hosting.json` e o projeto existentes. As credenciais temporárias devem permanecer em memória e ser passadas por stdin, nunca em arquivos ou URLs.
 
-```sh
-HOST=0.0.0.0 PORT=3000 NODE_ENV=production npm start
-```
+Execute os checks/build pendentes pelo fluxo oficial, sincronize o commit exato e empacote seus artefatos. Salve a versão com o SHA Sites e o arquivo retornados pelo helper. Publique essa versão salva no mesmo projeto. Não use `wrangler deploy` sem o mecanismo e as credenciais próprios da plataforma.
 
-Configure reinício após falhas e no boot. A hospedagem deve terminar HTTPS e encaminhar as requisições ao processo. Não há etapa de build nem `npm install` para o runtime atual.
+## Conferência pública obrigatória
 
-## Rede e verificação
+- `/version.json`, HTML/footer e SW identificam 1.1.1 e o commit esperado.
+- Todos os 16 arquivos públicos têm os hashes de `UPSTREAM.json`, MIME correto, `nosniff` e CORP `same-origin`; SW com revalidação, escopo raiz e cache de versão.
+- As quatro APIs devolvem seus dados reais, fontes e timestamps; falhas externas são identificadas sem inventar valores.
+- Parâmetros inválidos 400; origem externa 403; métodos de escrita 405; código privado 404.
+- Aba antiga recebe a atualização explícita; dados persistem sem limpeza do armazenamento.
+- Perfil de teste separado acessa todas as páginas dos históricos e as ações antigas, sem alterar dados reais.
 
-As fontes públicas exigem saída HTTPS para `api.bcb.gov.br`, `olinda.bcb.gov.br`, `servicodados.ibge.gov.br`, `www.federalreserve.gov` e, para as amostras opcionais, `brapi.dev`. Não desabilite a verificação TLS. Em redes com proxy, use a configuração de proxy e confiança suportada pelo runtime e pela hospedagem.
+## Dados e reversão
 
-Após publicar, confira no endereço público:
+Não limpe IndexedDB, localStorage ou dados do Site para atualizar. A origem, schema e envelope são preservados. A cópia anterior é mantida nas gravações comuns e após recusas inválidas. Na troca completa de senha, o checkpoint cifrado pela chave antiga é descartado deliberadamente; a próxima gravação recria um checkpoint cifrado pela chave nova. Backups anteriores continuam legíveis com a senha original.
 
-- A versão identificada no HTML e na interface é a da entrega escolhida.
-- `/` e os módulos carregam com os tipos corretos, sem erros JavaScript.
-- `/api/data?feed=macro`, `brazil` e `global` respondem com o contrato JSON, a data e a fonte dos dados; uma falha externa deve aparecer como indisponibilidade, nunca como valor inventado.
-- A primeira visita conectada instala o núcleo offline. Uma aba da versão anterior continua coerente até a atualização explícita; não misture arquivos de entregas diferentes no mesmo cache.
-- Um perfil de teste consegue criar, bloquear, desbloquear e restaurar um cofre com dados fictícios. Não use o cofre pessoal do usuário para esse teste.
+Mantenha 1.1.1 ou posterior para conservar estas correções. Reverter o servidor não reverte dados já salvos no navegador. Após categorias personalizadas, não usar frontend 1.0.x. A origem HTTP/hostname/porta não pode ser mudada sem exportação/restauração explícita.
 
-## Reversão
+## Alternativa Node
 
-Reverta o processo ou a imagem para a entrega anterior, mantendo o endereço público e o armazenamento do navegador. Guarde os assets completos e o service worker daquela entrega; não publique somente um módulo isolado.
-
-A volta do servidor não desfaz alterações já gravadas no IndexedDB. Antes de voltar a uma versão anterior, valide a compatibilidade com uma cópia de teste e exporte um backup. Após criar ou renomear categorias personalizadas na 1.1.0, não reverta o frontend para 1.0.x: essas versões antigas não reconhecem os novos nomes, embora o schema permaneça 3. Mantenha 1.1.0 ou posterior para ler esses dados. Uma versão antiga do service worker também precisa ser instalada e ativada pelo fluxo normal de atualização; limpar dados do site não é um procedimento de reversão.
-
-Para parar somente a implantação Compose, use `docker compose down`. Essa ação não apaga os cofres dos navegadores. Não execute limpeza de armazenamento no dispositivo do usuário para resolver um problema de publicação.
+`node server.mjs` ou `docker compose up --build --detach` executa o mesmo frontend e as quatro APIs. Configure proxy HTTPS que preserve Host e cabeçalhos; o bind padrão do Compose é somente localhost. O domínio original continua controlado pelo Sites; iniciar um Node em outro endereço não transfere os cofres.

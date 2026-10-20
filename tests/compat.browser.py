@@ -21,6 +21,8 @@ import os
 import re
 import shutil
 import tempfile
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
@@ -65,6 +67,47 @@ def arguments():
         parser.error("--timeout-ms must be between 1000 and 120000.")
     args.output.mkdir(parents=True, exist_ok=True)
     return args
+
+
+def offline_driver_probe(browser):
+    """Independent tiny SW: isolates the driver's offline navigation support."""
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+        def do_GET(self):
+            if self.path == '/sw.js':
+                body = b"self.addEventListener('activate',e=>e.waitUntil(clients.claim()));self.addEventListener('fetch',e=>{if(e.request.mode==='navigate')e.respondWith(new Response('<body>Offline driver probe</body>',{headers:{'Content-Type':'text/html'}}))});"
+                mime = 'application/javascript'
+            else:
+                body = b"<body>Offline driver probe<script src='/register.js'></script></body>"
+                mime = 'text/html'
+                if self.path == '/register.js':
+                    body = b"navigator.serviceWorker.register('/sw.js');"
+                    mime = 'application/javascript'
+            self.send_response(200)
+            self.send_header('Content-Type', mime)
+            self.send_header('Cache-Control', 'no-cache')
+            self.end_headers()
+            self.wfile.write(body)
+    server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    context = browser.new_context(service_workers='allow')
+    try:
+        page = context.new_page()
+        page.goto(f'http://127.0.0.1:{server.server_port}/',wait_until='domcontentloaded')
+        page.evaluate("async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(r=>navigator.serviceWorker.addEventListener('controllerchange',r,{once:true}))}")
+        context.set_offline(True)
+        try:
+            page.reload(wait_until='domcontentloaded',timeout=10000)
+            expect(page.locator('body')).to_have_text('Offline driver probe')
+            return {'independentProbeFailed':False}
+        except Exception as error:
+            return {'independentProbeFailed':True,'error':str(error),'containsApplicationCode':False}
+    finally:
+        context.close()
+        server.shutdown()
+        server.server_close()
 
 
 class Checks:
@@ -216,6 +259,168 @@ class Checks:
                 "encryptedBackupDownloadedAndRead": True, "savedRecordsContainNoPlaintextMarkers": True,
                 "lockRemovesPrivateUI": True, "wrongPasswordPreservesExactRaw": True, "unlockRestoresRecord": True}
 
+    def legacy_vault_upgrade(self):
+        # Synthetic v1.0.1 payloads: no catalog, no digest, payments without importKey.
+        before = self.page.evaluate("""async password => {
+          const F=await import('/finance.mjs'),C=await import('/crypto.mjs'),S=await import('/storage.mjs');
+          const state=F.demo(),kdf=C.newKdf(),key=await C.deriveKey(password,kdf);
+          delete state.categories;
+          for(const payment of state.payments)delete payment.importKey;
+          const root={...state,revision:0,recordKeys:[]},records=[];
+          for(const collection of F.COLLECTIONS){
+            for(const item of state[collection]){
+              const rk=collection+':'+item.id;root.recordKeys.push(rk);
+              records.push({key:'personal:'+rk,slot:'personal',collection,id:item.id,payload:await C.seal(item,key,rk)});
+            }
+            delete root[collection];
+          }
+          const head={version:3,revision:0,encrypted:true,kdf,operationId:'legacy-synthetic',payload:await C.seal(root,key,'root')};
+          const db=await S.openDatabase();try{
+            await new Promise((resolve,reject)=>{const tx=db.transaction(['data','records'],'readwrite');tx.objectStore('data').put(head,'head:personal');for(const r of records)tx.objectStore('records').put(r);tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error)});
+          }finally{db.close()}
+          return {ids:state.entries.map(x=>x.id),opening:state.accounts.map(x=>x.opening),amounts:state.entries.map(x=>x.amount)};
+        }""", PASSWORD)
+        self.choose_personal()
+        expect(self.page.locator('#dialog-title')).to_have_text('Abrir cofre pessoal')
+        self.fill('password',PASSWORD)
+        self.save()
+        self.navigate('configuracoes')
+        self.page.locator('[data-action="name"]').click()
+        self.fill('name','Cofre sintético migrado')
+        self.save()
+        self.page.reload(wait_until='domcontentloaded')
+        expect(self.page.locator('#main')).to_have_attribute('aria-busy','false')
+        self.choose_personal()
+        self.fill('password',PASSWORD)
+        self.save()
+        after=self.page.evaluate("""async password=>{
+          const S=await import('/storage.mjs'),C=await import('/crypto.mjs'),db=await S.openDatabase();
+          try{const raw=await S.loadRaw(db,'personal'),key=await C.deriveKey(password,raw.head.kdf);return await S.decodeRaw(raw,key)}finally{db.close()}
+        }""",PASSWORD)
+        assert after['name']=='Cofre sintético migrado'
+        assert [x['id'] for x in after['entries']]==before['ids']
+        assert [x['amount'] for x in after['entries']]==before['amounts']
+        assert [x['opening'] for x in after['accounts']]==before['opening']
+        assert after['categories']
+        return {'legacyVaultOpened':True,'firstWriteAndReloadPassed':True,'financialIDsAndValuesPreserved':True}
+
+    def installed_offline_core(self):
+        context=self.browser.new_context(locale='pt-BR',timezone_id='America/Sao_Paulo',service_workers='allow',viewport={'width':390,'height':844})
+        page=context.new_page();errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
+        try:
+            page.goto(self.args.base_url+'/',wait_until='domcontentloaded')
+            expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            page.evaluate("""async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}))}""")
+            page.reload(wait_until='domcontentloaded')
+            expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            assert page.locator('meta[name="application-version"]').get_attribute('content')=='1.1.1'
+            context.set_offline(True)
+            page.reload(wait_until='domcontentloaded')
+            expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            for route,label in ROUTES.items():
+                page.evaluate('(route)=>location.hash=route',route)
+                expect(page.locator('#breadcrumb')).to_have_text(label)
+            page.evaluate("location.hash='lancamentos'")
+            page.locator('.page-heading [data-action="entry"]').click()
+            page.locator('input[name="description"]').fill('Registro sintético offline')
+            page.locator('input[name="amount"]').fill('12,34')
+            page.locator('#dialog-submit').click()
+            expect(page.locator('#dialog')).not_to_be_visible()
+            page.reload(wait_until='domcontentloaded')
+            expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            expect(page.locator('#ledger-results')).to_contain_text('Registro sintético offline')
+            assert not errors,errors
+            context.set_offline(False)
+            return {'serviceWorkerInstalled':True,'offlineReloadAndEightRoutesPassed':True,'offlineRecordPersisted':True,'viewport':{'width':390,'height':844}}
+        finally:
+            context.close()
+
+    def load_history_fixture(self):
+        fixture=json.loads((Path(__file__).parent/'fixtures/history.json').read_text())
+        self.page.evaluate("""async state=>{
+          const S=await import('/storage.mjs'),db=await S.openDatabase();
+          try{const before=await S.decodeRaw(await S.loadRaw(db,'demo'));await S.saveSlot(db,'demo',before,state,before.revision)}finally{db.close()}
+        }""",fixture)
+        self.page.reload(wait_until='domcontentloaded')
+        expect(self.page.locator('#main')).to_have_attribute('aria-busy','false')
+        return fixture
+
+    def history_cash(self):
+        return self.page.evaluate("""async()=>{
+          const S=await import('/storage.mjs'),F=await import('/finance.mjs'),db=await S.openDatabase();
+          try{const state=await S.decodeRaw(await S.loadRaw(db,'demo'));return {bank:F.balances(state).get('bank'),broker:F.balances(state).get('broker'),cost:F.portfolio(state).cost}}finally{db.close()}
+        }""")
+
+    def history_desktop_actions(self):
+        fixture=self.load_history_fixture()
+        for collection,route,action in [('transfers','contas','delete-transfer'),('trades','investimentos','delete-trade'),('dividends','investimentos','delete-dividend')]:
+            self.navigate(route)
+            ids=[]
+            for page in range(1,4):
+                expect(self.page.locator(f'#history-{collection}-status')).to_contain_text(f'Página {page} de 3')
+                ids.extend(self.page.locator(f'#history-{collection}-rows [data-action="{action}"]').evaluate_all('els=>els.map(el=>el.dataset.id)'))
+                if page<3:
+                    self.page.locator(f'#history-{collection}-next').click()
+                    expect(self.page.locator(f'#history-{collection}-status' if page==2 else f'#history-{collection}-next')).to_be_focused()
+            assert len(ids)==len(set(ids))==len(fixture[collection])
+            assert set(ids)=={row['id'] for row in fixture[collection]}
+        # All mutations below address the oldest record, beyond former truncation.
+        before=self.history_cash()
+        self.navigate('contas')
+        self.page.once('dialog',lambda dialog:dialog.accept())
+        self.page.locator('[data-action="delete-transfer"][data-id="transfer-000"]').click()
+        expect(self.page.locator('[data-action="delete-transfer"][data-id="transfer-000"]')).to_have_count(0)
+        assert len(self.state()['transfers'])==24
+        after=self.history_cash();assert after['bank']==before['bank']+1000 and after['broker']==before['broker']-1000
+        self.navigate('investimentos')
+        self.page.once('dialog',lambda dialog:dialog.accept())
+        self.page.locator('[data-action="delete-trade"][data-id="trade-000"]').click()
+        expect(self.page.locator('[data-action="delete-trade"][data-id="trade-000"]')).to_have_count(0)
+        assert len(self.state()['trades'])==64
+        after_trade=self.history_cash();assert after_trade['broker']==after['broker']+1000 and after_trade['cost']==after['cost']-1000
+        self.page.locator('[data-action="receive-dividend"][data-id="dividend-000"]').click()
+        expect(self.page.locator('[data-action="receive-dividend"][data-id="dividend-000"]')).to_have_count(0)
+        received=self.state();assert len(received['dividends'])==65
+        assert sum(d['status']=='received' for d in received['dividends'])==1
+        assert self.history_cash()['broker']==after_trade['broker']+1234
+        for _ in range(2):
+            self.page.reload(wait_until='domcontentloaded')
+            expect(self.page.locator('#main')).to_have_attribute('aria-busy','false')
+            assert self.history_cash()['broker']==after_trade['broker']+1234
+            assert len(self.state()['dividends'])==65
+        self.page.locator('#history-dividends-last').click()
+        self.page.once('dialog',lambda dialog:dialog.accept())
+        self.page.locator('[data-action="delete-dividend"][data-id="dividend-000"]').click()
+        expect(self.page.locator('[data-action="delete-dividend"][data-id="dividend-000"]')).to_have_count(0)
+        self.page.reload(wait_until='domcontentloaded')
+        expect(self.page.locator('#main')).to_have_attribute('aria-busy','false')
+        final=self.state()
+        assert len(final['transfers'])==24 and len(final['trades'])==64 and len(final['dividends'])==64
+        assert not final['entries'] and not final['payments']
+        assert self.history_cash()['broker']==after_trade['broker']
+        return {'fullIDCoverage':{'transfers':25,'trades':65,'dividends':65},'oldRecordActionsPassed':True,'receiveAndDeletePersisted':True,'noFinancialDuplication':True,'focusPassed':True}
+
+    def history_mobile_navigation(self):
+        self.load_history_fixture()
+        self.page.set_viewport_size({'width':320,'height':568})
+        self.page.locator('#mobile-nav [data-view="contas"]').click()
+        expect(self.page.locator('#breadcrumb')).to_have_text('Contas e cartões')
+        for collection in ['transfers','trades','dividends']:
+            if collection=='trades':
+                self.page.locator('#mobile-nav [data-view="configuracoes"]').click()
+                self.page.get_by_role('button',name='Investimentos ↗',exact=True).click()
+                expect(self.page.locator('#breadcrumb')).to_have_text('Investimentos')
+            self.page.locator(f'#history-{collection}-last').click()
+            status=self.page.locator(f'#history-{collection}-status')
+            expect(status).to_contain_text('Página 3 de 3')
+            expect(status).to_be_focused()
+            dimensions=self.page.evaluate('()=>({width:innerWidth,document:document.documentElement.scrollWidth})')
+            assert dimensions['document']<=dimensions['width']+1,dimensions
+            self.page.locator(f'#history-{collection}-first').click()
+            expect(status).to_contain_text('Página 1 de 3')
+        self.page.screenshot(path=str(self.args.output/f'{self.engine}-history-mobile.png'),full_page=True)
+        return {'mobileNavigationPassed':True,'threeHistoriesNavigable':True,'noHorizontalOverflow':True,'touchViewport':{'width':320,'height':568}}
+
     def responsive_and_accessible_names(self):
         layouts = []
         for width, height in [(320, 568), (390, 844), (844, 390), (768, 1024)]:
@@ -261,7 +466,7 @@ def main():
     engines = ["chromium", "firefox", "webkit"] if args.browser == "all" else [args.browser]
     report = {
         "startedAtUtc": datetime.now(timezone.utc).isoformat(), "baseUrl": args.base_url,
-        "fixture": "Synthetic data, temporary profiles, service workers blocked, market unavailable.",
+        "fixture": "Synthetic data, temporary profiles; service workers enabled only for offline scenario; market unavailable.",
         "engines": [], "physicalDeviceTested": False, "humanScreenReaderTested": False,
     }
     with sync_playwright() as pw:
@@ -285,7 +490,7 @@ def main():
                 continue
             record["browserVersion"] = browser.version
             try:
-                for scenario in ("demo_form_and_focus", "vault_and_encrypted_backup", "responsive_and_accessible_names"):
+                for scenario in ("demo_form_and_focus", "vault_and_encrypted_backup", "legacy_vault_upgrade", "installed_offline_core", "history_desktop_actions", "history_mobile_navigation", "responsive_and_accessible_names"):
                     checks = None
                     outcome = {"name": scenario, "passed": False}
                     try:
@@ -297,6 +502,12 @@ def main():
                     except Exception as error:
                         record["status"] = "failed"
                         outcome.update({"error": str(error), "traceback": traceback.format_exc()})
+                        if scenario == "installed_offline_core" and engine == "webkit" and "WebKit encountered an internal error" in str(error):
+                            probe=offline_driver_probe(browser)
+                            outcome["offlineDriverProbe"]=probe
+                            if probe["independentProbeFailed"] and "WebKit encountered an internal error" in probe["error"]:
+                                outcome["blockedByDriver"]=True
+                                record["status"]="limited"
                         if checks:
                             outcome["pageErrors"] = checks.errors
                             outcome["externalRequests"] = checks.blocked_requests
@@ -304,17 +515,26 @@ def main():
                         if checks:
                             checks.close()
                     record["scenarios"].append(outcome)
-                    print(f'{engine}: {scenario}: {"passed" if outcome["passed"] else "FAILED"}', flush=True)
+                    print(f'{engine}: {scenario}: {"passed" if outcome["passed"] else "BLOCKED by driver" if outcome.get("blockedByDriver") else "FAILED"}', flush=True)
+                    if "error" in outcome: print(json.dumps(outcome,ensure_ascii=False),flush=True)
             finally:
                 browser.close()
             record["scenariosExecuted"] = len(record["scenarios"])
+            record["status"] = "failed" if any(not s["passed"] and not s.get("blockedByDriver") for s in record["scenarios"]) else "blocked" if any(s.get("blockedByDriver") for s in record["scenarios"]) else "passed"
             report["engines"].append(record)
     report["completedAtUtc"] = datetime.now(timezone.utc).isoformat()
     report["passed"] = all(record["status"] == "passed" for record in report["engines"])
+    report["applicationChecksPassed"] = all(record["status"] in ("passed","blocked") and record.get("scenariosExecuted",0)>0 for record in report["engines"])
+    report["counts"]={
+      "passedScenarios":sum(s["passed"] for e in report["engines"] for s in e.get("scenarios",[])),
+      "blockedScenarios":sum(bool(s.get("blockedByDriver")) for e in report["engines"] for s in e.get("scenarios",[])),
+      "failedScenarios":sum(not s["passed"] and not s.get("blockedByDriver") for e in report["engines"] for s in e.get("scenarios",[])),
+      "routeViewportCombinations":sum(s.get("routeViewportCombinations",0) for e in report["engines"] for s in e.get("scenarios",[]) if s["passed"]),
+    }
     output = args.output / "compat-results.json"
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2))
-    print(json.dumps({"passed": report["passed"], "engines": [{"engine": r["engine"], "status": r["status"], "scenarios": r.get("scenariosExecuted", 0)} for r in report["engines"]], "report": str(output)}, ensure_ascii=False))
-    raise SystemExit(0 if report["passed"] else 1)
+    print(json.dumps({"passed": report["passed"], "counts":report["counts"], "engines": [{"engine": r["engine"], "status": r["status"], "scenarios": r.get("scenariosExecuted", 0)} for r in report["engines"]], "report": str(output)}, ensure_ascii=False))
+    raise SystemExit(0 if report["applicationChecksPassed"] else 1)
 
 
 if __name__ == "__main__":

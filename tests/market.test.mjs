@@ -16,7 +16,7 @@ async function fresh(t) {
     if (originalStorage) Object.defineProperty(globalThis, 'localStorage', originalStorage);
     else delete globalThis.localStorage;
   });
-  return { ...(await import(`../market.mjs?test=${++moduleId}`)), values };
+  return { ...(await import(`../public/market.mjs?test=${++moduleId}`)), values };
 }
 const macro = overrides => ({ id: 'selic', name: 'Selic meta', value: 13.75, unit: '% a.a.', source: 'BCB', reference: '2025-01-01', url: 'https://www.bcb.gov.br/controleinflacao/taxaselic', ...overrides });
 function envelope(items, overrides = {}) {

@@ -1,5 +1,17 @@
 # Alterações
 
+## 1.1.1
+
+- Históricos completos e paginados de transferências, operações e proventos, com ações antigas acessíveis, foco e adaptação móvel.
+- Validação de mudança de KDF anterior à leitura cifrada da raiz; CAS, recuperação e correção de migração 1.0.1 preservados.
+- Cabeçalhos uniformes para os assets pelo Worker; MIME, cache, SW, HEAD e 304 mantidos.
+- Projeto completo, adaptação do servidor, testes sobre o código atual, CI multiengine e instruções reproduzíveis de build/publicação no GitHub.
+- Proveniência por `/version.json` e commit GitHub no build; cache offline `mf-core-1.1.1`, sem limpeza de cofres.
+
+---
+
+# Alterações
+
 ## 1.1.0 — conclusão das pendências de implementação
 
 - Backend `/api/data` e healthcheck incluídos: BCB/IBGE, notícias IBGE, comunicados Fed e amostras brapi opcionais. Todos os quatro feeds foram consultados com dados reais; validação, cache, limite de resposta, timeout e retentativas foram testados.
@@ -53,3 +65,11 @@ A suíte nativa reúne 110 testes. Scripts adicionais verificam os fluxos reais 
 O schema continua na versão 3; `payments.importKey` é opcional. Backups criptografados continuam no envelope versão 1. Registros antigos sem resumo de integridade são aceitos e atualizados na próxima gravação. Dados inconsistentes são preservados para recuperação, sem correção silenciosa de valores.
 
 O backend de `/api/data` não foi disponibilizado. O servidor local retorna HTTP 503 para esse serviço. Não foram adicionados sincronização entre dispositivos, conexão bancária, recuperação de senha por servidor ou cálculo fiscal. A criptografia protege os dados armazenados; não impede acesso por um dispositivo comprometido nem a restauração completa de uma cópia antiga válida.
+
+
+## Publicação Sites 1.1.0
+
+- Incorporado `main` em `0c22b907b2f89c79ceb81d9e414a9cea4b4697f2` no projeto e domínio originais.
+- Mantido backend original, adaptando o transporte para Cloudflare Workers e preservando CSP, destinos fixos e contrato JSON.
+- Corrigida a primeira gravação de registros legados sem digest, com testes contra o cofre real 1.0.1 usando somente fixtures sintéticas. Schema, envelope, criptografia, IDs, valores e origem preservados.
+- Adicionados testes da adaptação, migração de cofres e backup antigo, mais CI de migração e offline em navegadores.

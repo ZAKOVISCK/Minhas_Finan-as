@@ -1,0 +1,217 @@
+{
+  "startedAtUtc": "2026-10-20T15:37:30.714398+00:00",
+  "baseUrl": "http://127.0.0.1:3000",
+  "fixture": "Synthetic data, temporary profiles; service workers enabled only for offline scenario; market unavailable.",
+  "engines": [
+    {
+      "engine": "chromium",
+      "status": "passed",
+      "scenarios": [
+        {
+          "name": "demo_form_and_focus",
+          "passed": true,
+          "invalidMoneyDoesNotSave": true,
+          "fieldErrorAndFocus": true,
+          "centavosSavedExactly": true,
+          "focusReturnsAfterEdit": true,
+          "reloadPreservesRecord": true,
+          "pageErrors": [],
+          "externalRequests": []
+        },
+        {
+          "name": "vault_and_encrypted_backup",
+          "passed": true,
+          "webCryptoAndIndexedDB": true,
+          "personalStartsEmpty": true,
+          "encryptedBackupDownloadedAndRead": true,
+          "savedRecordsContainNoPlaintextMarkers": true,
+          "lockRemovesPrivateUI": true,
+          "wrongPasswordPreservesExactRaw": true,
+          "unlockRestoresRecord": true,
+          "pageErrors": [],
+          "externalRequests": []
+        },
+        {
+          "name": "legacy_vault_upgrade",
+          "passed": true,
+          "legacyVaultOpened": true,
+          "firstWriteAndReloadPassed": true,
+          "financialIDsAndValuesPreserved": true,
+          "pageErrors": [],
+          "externalRequests": []
+        },
+        {
+          "name": "installed_offline_core",
+          "passed": true,
+          "serviceWorkerInstalled": true,
+          "offlineReloadAndEightRoutesPassed": true,
+          "offlineRecordPersisted": true,
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "pageErrors": [],
+          "externalRequests": []
+        },
+        {
+          "name": "responsive_and_accessible_names",
+          "passed": true,
+          "routeViewportCombinations": 32,
+          "noHorizontalPageOverflow": true,
+          "navigationHasAccessibleNames": true,
+          "weeklyTableHasRealValues": true,
+          "hiddenValuesProtectedOnEveryRoute": true,
+          "physicalDeviceTested": false,
+          "pageErrors": [],
+          "externalRequests": []
+        }
+      ],
+      "headless": true,
+      "executable": "/usr/bin/chromium",
+      "browserVersion": "155.0.8059.0",
+      "scenariosExecuted": 5
+    },
+    {
+      "engine": "firefox",
+      "status": "passed",
+      "scenarios": [
+        {
+          "name": "demo_form_and_focus",
+          "passed": true,
+          "invalidMoneyDoesNotSave": true,
+          "fieldErrorAndFocus": true,
+          "centavosSavedExactly": true,
+          "focusReturnsAfterEdit": true,
+          "reloadPreservesRecord": true,
+          "pageErrors": [],
+          "externalRequests": []
+        },
+        {
+          "name": "vault_and_encrypted_backup",
+          "passed": true,
+          "webCryptoAndIndexedDB": true,
+          "personalStartsEmpty": true,
+          "encryptedBackupDownloadedAndRead": true,
+          "savedRecordsContainNoPlaintextMarkers": true,
+          "lockRemovesPrivateUI": true,
+          "wrongPasswordPreservesExactRaw": true,
+          "unlockRestoresRecord": true,
+          "pageErrors": [],
+          "externalRequests": []
+        },
+        {
+          "name": "legacy_vault_upgrade",
+          "passed": true,
+          "legacyVaultOpened": true,
+          "firstWriteAndReloadPassed": true,
+          "financialIDsAndValuesPreserved": true,
+          "pageErrors": [],
+          "externalRequests": []
+        },
+        {
+          "name": "installed_offline_core",
+          "passed": true,
+          "serviceWorkerInstalled": true,
+          "offlineReloadAndEightRoutesPassed": true,
+          "offlineRecordPersisted": true,
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "pageErrors": [],
+          "externalRequests": []
+        },
+        {
+          "name": "responsive_and_accessible_names",
+          "passed": true,
+          "routeViewportCombinations": 32,
+          "noHorizontalPageOverflow": true,
+          "navigationHasAccessibleNames": true,
+          "weeklyTableHasRealValues": true,
+          "hiddenValuesProtectedOnEveryRoute": true,
+          "physicalDeviceTested": false,
+          "pageErrors": [],
+          "externalRequests": []
+        }
+      ],
+      "headless": true,
+      "executable": "Playwright-managed engine",
+      "browserVersion": "153.0",
+      "scenariosExecuted": 5
+    },
+    {
+      "engine": "webkit",
+      "status": "limited",
+      "scenarios": [
+        {
+          "name": "demo_form_and_focus",
+          "passed": true,
+          "invalidMoneyDoesNotSave": true,
+          "fieldErrorAndFocus": true,
+          "centavosSavedExactly": true,
+          "focusReturnsAfterEdit": true,
+          "reloadPreservesRecord": true,
+          "pageErrors": [],
+          "externalRequests": []
+        },
+        {
+          "name": "vault_and_encrypted_backup",
+          "passed": true,
+          "webCryptoAndIndexedDB": true,
+          "personalStartsEmpty": true,
+          "encryptedBackupDownloadedAndRead": true,
+          "savedRecordsContainNoPlaintextMarkers": true,
+          "lockRemovesPrivateUI": true,
+          "wrongPasswordPreservesExactRaw": true,
+          "unlockRestoresRecord": true,
+          "pageErrors": [],
+          "externalRequests": []
+        },
+        {
+          "name": "legacy_vault_upgrade",
+          "passed": true,
+          "legacyVaultOpened": true,
+          "firstWriteAndReloadPassed": true,
+          "financialIDsAndValuesPreserved": true,
+          "pageErrors": [],
+          "externalRequests": []
+        },
+        {
+          "name": "installed_offline_core",
+          "passed": false,
+          "error": "Page.reload: WebKit encountered an internal error\nCall log:\n  - waiting for navigation until \"domcontentloaded\"\n",
+          "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/Minhas_Finan-as/Minhas_Finan-as/tests/compat.browser.py\", line 412, in main\n    outcome.update(getattr(checks, scenario)())\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Minhas_Finan-as/Minhas_Finan-as/tests/compat.browser.py\", line 318, in installed_offline_core\n    page.reload(wait_until='domcontentloaded')\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/playwright/sync_api/_generated.py\", line 9921, in reload\n    self._sync(\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/playwright/_impl/_page.py\", line 568, in reload\n    await self._channel.send(\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/playwright/_impl/_connection.py\", line 76, in send\n    return await self._connection.wrap_api_call(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/playwright/_impl/_connection.py\", line 632, in wrap_api_call\n    raise rewrite_error(error, f\"{parsed_st['apiName']}: {error}\") from None\nplaywright._impl._errors.Error: Page.reload: WebKit encountered an internal error\nCall log:\n  - waiting for navigation until \"domcontentloaded\"\n\n",
+          "offlineDriverProbe": {
+            "independentProbeFailed": true,
+            "error": "Page.reload: WebKit encountered an internal error\nCall log:\n  - waiting for navigation until \"domcontentloaded\"\n",
+            "containsApplicationCode": false
+          },
+          "blockedByDriver": true,
+          "pageErrors": [],
+          "externalRequests": []
+        },
+        {
+          "name": "responsive_and_accessible_names",
+          "passed": true,
+          "routeViewportCombinations": 32,
+          "noHorizontalPageOverflow": true,
+          "navigationHasAccessibleNames": true,
+          "weeklyTableHasRealValues": true,
+          "hiddenValuesProtectedOnEveryRoute": true,
+          "physicalDeviceTested": false,
+          "pageErrors": [],
+          "externalRequests": []
+        }
+      ],
+      "headless": true,
+      "executable": "Playwright-managed engine",
+      "browserVersion": "26.5",
+      "scenariosExecuted": 5
+    }
+  ],
+  "physicalDeviceTested": false,
+  "humanScreenReaderTested": false,
+  "completedAtUtc": "2026-10-20T15:38:31.094411+00:00",
+  "passed": false,
+  "applicationChecksPassed": true
+}

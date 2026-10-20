@@ -1,14 +1,11 @@
 name: Validate application
-
 on:
   push:
   pull_request:
-
 permissions:
   contents: read
-
 jobs:
-  test:
+  native:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -18,31 +15,42 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+      - run: npm install --global pnpm@11.25.0
+      - run: pnpm install --frozen-lockfile
       - run: npm test
-
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --global pnpm@11.25.0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: node scripts/check-worker-build.mjs
   container:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: docker build --tag minhas-financas:ci .
-      - name: Smoke test production image
+      - name: Smoke test Node production image
         run: |
           docker run --detach --name minhas-financas-ci --publish 127.0.0.1:3000:3000 --read-only --cap-drop ALL --security-opt no-new-privileges minhas-financas:ci
           trap 'docker logs minhas-financas-ci; docker rm --force minhas-financas-ci' EXIT
           for attempt in $(seq 1 20); do
             if curl --fail --silent http://127.0.0.1:3000/ --output /tmp/minhas-financas-index.html; then
-              test -s /tmp/minhas-financas-index.html
-              grep --quiet '/app.js' /tmp/minhas-financas-index.html
+              grep --quiet 'application-version.*1.1.1' /tmp/minhas-financas-index.html
               test "$(docker exec minhas-financas-ci id -u)" != 0
               exit 0
             fi
             sleep 1
           done
           exit 1
-
   browsers:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,24 +61,30 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install --disable-pip-version-check -r tests/requirements-browser.txt
       - run: python -m playwright install --with-deps chromium firefox webkit
-      - name: Test the actual app in three browser engines
+      - name: Test real UI in three browser engines
         run: |
           node server.mjs > /tmp/minhas-financas-server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"; cat /tmp/minhas-financas-server.log' EXIT
-          ready=0
           for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:3000/api/health; then
-              ready=1
-              break
-            fi
+            if curl --fail --silent http://127.0.0.1:3000/api/health; then break; fi
             sleep 1
           done
-          test "$ready" = 1
-          python tests/compat.browser.py --browser all --output /tmp/minhas-financas-browser-results
+          python tests/compat.browser.py --browser all --output /tmp/minhas-financas-browser-results/compat
+      - name: Additional Chromium suites (counts kept separate)
+        if: always()
+        run: |
+          node server.mjs > /tmp/minhas-financas-extra-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"; cat /tmp/minhas-financas-extra-server.log' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/api/health; then break; fi
+            sleep 1
+          done
+          python tests/run-browser-suites.py --output /tmp/minhas-financas-browser-results/additional
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: browser-results
           path: /tmp/minhas-financas-browser-results
-          if-no-files-found: ignore
+          if-no-files-found: error

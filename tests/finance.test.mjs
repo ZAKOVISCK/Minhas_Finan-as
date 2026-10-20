@@ -5,7 +5,7 @@ import {
   parseMoney, units, multiply, outstanding, balances, summary, budgetUsage,
   settle, purchase, payStatement, generateRecurrences, positions, portfolio,
   migrate, serializeBackup, parseBackup, ledgerCSV, demo,
-} from '../finance.mjs';
+} from '../public/finance.mjs';
 
 const AS_OF='2026-10-20', MONTH='2026-10';
 const account=(id='bank',overrides={})=>({id,name:id,kind:'bank',opening:100000,openingDate:'2026-01-01',archived:false,...overrides});

@@ -1,0 +1,342 @@
+{
+  "atUtc": "2026-10-20T15:50:28.856422+00:00",
+  "url": "https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site",
+  "version": "1.1.0",
+  "upstream": "0c22b907b2f89c79ceb81d9e414a9cea4b4697f2",
+  "siteCommit": "8072fdce1ac059570b0969d2be1dc01fb048b197",
+  "files": [
+    {
+      "file": "index.html",
+      "status": 200,
+      "sha256": "1c19e3c8c58c3b6abc03631558dbc563a95ae4ad4cf9ad5c1140ab19427ed92c",
+      "matchesRelease": true,
+      "mime": "text/html; charset=utf-8",
+      "versionHeader": "1.1.0",
+      "cacheControl": "no-cache",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "styles.css",
+      "status": 200,
+      "sha256": "962cf93be8060c13e2fca5a83fb0e3ed776f13df4925882ebae41ff62a460680",
+      "matchesRelease": true,
+      "mime": "text/css",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "app.js",
+      "status": 200,
+      "sha256": "83234323458668e24e76093c22b36507189d0db7f182d4f14ced32614963139c",
+      "matchesRelease": true,
+      "mime": "text/javascript",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "finance.mjs",
+      "status": 200,
+      "sha256": "5fe96395fd09b1c968f310390793fb6f830c5ae44e20d21ea458d8e83219f53a",
+      "matchesRelease": true,
+      "mime": "text/javascript",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "legacy-finance.mjs",
+      "status": 200,
+      "sha256": "1742c21a7820f01078ccc39dca6682f408981fc385a166a95a2096b4efe631e4",
+      "matchesRelease": true,
+      "mime": "text/javascript",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "storage.mjs",
+      "status": 200,
+      "sha256": "931ba8aa516f4c63bc85a783f85ab685d1cee79af80f93e77407b6054f345f90",
+      "matchesRelease": true,
+      "mime": "text/javascript",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "crypto.mjs",
+      "status": 200,
+      "sha256": "9bbabb1e8ee914a5084a43c7b9409c44c94b8b907c4b27b2b81a70892a9a6ec5",
+      "matchesRelease": true,
+      "mime": "text/javascript",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "views.mjs",
+      "status": 200,
+      "sha256": "c37b506f5c84d65df72b30a03b18b1a5fcfe50d63dcc0fec77ee5021ebd8fc27",
+      "matchesRelease": true,
+      "mime": "text/javascript",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "imports.mjs",
+      "status": 200,
+      "sha256": "933a225ad2953d5bd1eab943f55e44cc7dc6e031dda43e281c3f1831d6142a39",
+      "matchesRelease": true,
+      "mime": "text/javascript",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "market.mjs",
+      "status": 200,
+      "sha256": "7f6d2d07033d97679b2ccb19ad72996eba067150efe3a48d498fa735d7025251",
+      "matchesRelease": true,
+      "mime": "text/javascript",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "form-utils.mjs",
+      "status": 200,
+      "sha256": "372f9596a7ddacfd92c6a4cf4498233b65ffbfb2f14312906f2590efc86b7af2",
+      "matchesRelease": true,
+      "mime": "text/javascript",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "sw.js",
+      "status": 200,
+      "sha256": "40a10aafd67daa95e89e1aa5bafa5cf98bd4cb668599242847201a11d6c70fde",
+      "matchesRelease": true,
+      "mime": "text/javascript",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "manifest.webmanifest",
+      "status": 200,
+      "sha256": "5dea15a60615027e2bc6de62d9251dae452da8788c64fad746ab8bb3bc0a6520",
+      "matchesRelease": true,
+      "mime": "application/manifest+json",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "icon.svg",
+      "status": 200,
+      "sha256": "9eaf7b4db4ce9f08009cc94b36eefc5daa8e89707513a6c177bdb873efff3f17",
+      "matchesRelease": true,
+      "mime": "image/svg+xml",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "icon-192.png",
+      "status": 200,
+      "sha256": "6455f368d25120447c288f1397038b0aabfe46daad39c757a753e15155838776",
+      "matchesRelease": true,
+      "mime": "image/png",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    },
+    {
+      "file": "icon-512.png",
+      "status": 200,
+      "sha256": "2a6c1a3f6f1d95562bede192f599f0008d4f393cd8496586367f0f74717f3c42",
+      "matchesRelease": true,
+      "mime": "image/png",
+      "versionHeader": null,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "scope": null,
+      "passed": true
+    }
+  ],
+  "feeds": [
+    {
+      "feed": "macro",
+      "status": 200,
+      "itemCount": 4,
+      "errors": [],
+      "error": null,
+      "fetchedAt": "2026-10-20T15:49:14.228Z",
+      "expiresAt": "2026-10-20T17:49:14.228Z",
+      "source": "BCB e IBGE",
+      "sources": [
+        "BCB · SGS 432",
+        "IBGE via BCB · SGS 433",
+        "Cálculo composto · 12 variações SGS 433",
+        "BCB · PTAX de fechamento"
+      ],
+      "mime": "application/json; charset=utf-8",
+      "securityCSP": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+      "passed": true
+    },
+    {
+      "feed": "brazil",
+      "status": 200,
+      "itemCount": 10,
+      "errors": [],
+      "error": null,
+      "fetchedAt": "2026-10-20T15:50:54.219Z",
+      "expiresAt": "2026-10-20T16:50:54.219Z",
+      "source": "IBGE",
+      "sources": [
+        "Agência IBGE Notícias"
+      ],
+      "mime": "application/json; charset=utf-8",
+      "securityCSP": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+      "passed": true
+    },
+    {
+      "feed": "global",
+      "status": 200,
+      "itemCount": 10,
+      "errors": [],
+      "error": null,
+      "fetchedAt": "2026-10-20T15:49:12.786Z",
+      "expiresAt": "2026-10-20T16:49:12.786Z",
+      "source": "Federal Reserve",
+      "sources": [
+        "Federal Reserve"
+      ],
+      "mime": "application/json; charset=utf-8",
+      "securityCSP": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+      "passed": true
+    },
+    {
+      "feed": "samples",
+      "status": 200,
+      "itemCount": 2,
+      "errors": [],
+      "error": null,
+      "fetchedAt": "2026-10-20T15:50:53.628Z",
+      "expiresAt": "2026-10-20T15:55:53.628Z",
+      "source": "brapi · amostras gratuitas",
+      "sources": [
+        ""
+      ],
+      "mime": "application/json; charset=utf-8",
+      "securityCSP": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+      "passed": true
+    }
+  ],
+  "guards": [
+    {
+      "path": "/api/health",
+      "method": "GET",
+      "status": 200,
+      "expected": 200,
+      "passed": true
+    },
+    {
+      "path": "/api/data?feed=macro&feed=global",
+      "method": "GET",
+      "status": 400,
+      "expected": 400,
+      "passed": true
+    },
+    {
+      "path": "/api/data?feed=macro&url=https://example.com",
+      "method": "GET",
+      "status": 400,
+      "expected": 400,
+      "passed": true
+    },
+    {
+      "path": "/api/data?feed=macro",
+      "method": "GET",
+      "status": 403,
+      "expected": 403,
+      "passed": true
+    },
+    {
+      "path": "/api/data?feed=macro",
+      "method": "POST",
+      "status": 405,
+      "expected": 405,
+      "passed": true
+    },
+    {
+      "path": "/release/server.mjs",
+      "method": "GET",
+      "status": 404,
+      "expected": 404,
+      "passed": true
+    },
+    {
+      "path": "/server.mjs",
+      "method": "GET",
+      "status": 404,
+      "expected": 404,
+      "passed": true
+    },
+    {
+      "path": "/README.md",
+      "method": "GET",
+      "status": 404,
+      "expected": 404,
+      "passed": true
+    },
+    {
+      "path": "/UPSTREAM.json",
+      "method": "GET",
+      "status": 404,
+      "expected": 404,
+      "passed": true
+    },
+    {
+      "path": "/tests/vault-upgrade.test.mjs",
+      "method": "GET",
+      "status": 404,
+      "expected": 404,
+      "passed": true
+    },
+    {
+      "path": "/.openai/hosting.json",
+      "method": "GET",
+      "status": 404,
+      "expected": 404,
+      "passed": true
+    }
+  ],
+  "document": {
+    "status": 200,
+    "version": true,
+    "headerVersion": "1.1.0",
+    "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+    "noClearSiteData": true,
+    "passed": true
+  },
+  "passed": true
+}

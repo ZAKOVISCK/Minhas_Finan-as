@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createMarketService } from '../market-server.mjs';
+import { createMarketService } from '../lib/market-server.mjs';
 
 const NOW = Date.parse('2026-10-20T12:00:00Z');
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', ...headers } });

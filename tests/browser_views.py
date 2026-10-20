@@ -5,6 +5,7 @@ are positional arguments. Service workers are blocked here so the current source
 is exercised; offline delivery has separate coverage.
 """
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -15,7 +16,7 @@ OUT.mkdir(parents=True,exist_ok=True)
 ROUTES={'inicio':'Visão geral','lancamentos':'Lançamentos','contas':'Contas e cartões','planejamento':'Planejamento','investimentos':'Investimentos','mercado':'Mercado e notícias','relatorios':'Relatórios','configuracoes':'Configurações'}
 results={'layouts':[],'errors':[]}
 with sync_playwright() as pw:
- browser=pw.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
+ browser=pw.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH','/usr/bin/chromium'),headless=True,args=['--no-sandbox'])
  context=browser.new_context(locale='pt-BR',timezone_id='America/Sao_Paulo',service_workers='block',reduced_motion='reduce')
  page=context.new_page();page.on('pageerror',lambda e:results['errors'].append(str(e)))
  page.goto(BASE,wait_until='networkidle');page.locator('main[aria-busy=false]').wait_for()

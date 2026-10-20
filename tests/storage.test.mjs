@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {COLLECTIONS, emptyState, validateState} from '../finance.mjs';
-import {decodeRaw, previousRaw, diffRecords, storageInfo, requestPersistence} from '../storage.mjs';
+import {COLLECTIONS, emptyState, validateState} from '../public/finance.mjs';
+import {decodeRaw, previousRaw, diffRecords, storageInfo, requestPersistence} from '../public/storage.mjs';
 
 function rawState(state=emptyState('Teste'),slot='demo') {
   const safe=validateState(state),root={...safe,recordKeys:[]},records=[];

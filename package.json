@@ -1,16 +1,54 @@
 {
   "name": "minhas-financas",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
-  "type": "module",
-  "description": "Finanças pessoais locais com cofre criptografado no navegador.",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "node --watch server.mjs",
-    "start": "node server.mjs",
-    "check": "node scripts/check-syntax.mjs",
-    "test": "npm run check && node --test tests/*.test.mjs"
-  }
+    "install:ci": "bash scripts/install-pnpm.sh",
+    "dev": "node scripts/run-framework.mjs dev",
+    "build": "node scripts/run-framework.mjs build",
+    "start": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "test": "npm run check && node --test tests/*.test.mjs",
+    "check": "node scripts/check-app.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:upstream": "npm --prefix release test",
+    "start:upstream": "node release/server.mjs",
+    "start:node": "node server.mjs"
+  },
+  "dependencies": {
+    "next": "16.3.4",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.37.1",
+    "@cloudflare/workers-types": "4.20260515.1",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "@vitejs/plugin-rsc": "0.5.26",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.3.4",
+    "fake-indexeddb": "6.2.4",
+    "json-rpc-2.0": "1.7.1",
+    "linkedom": "0.18.12",
+    "raw-body": "3.0.2",
+    "react-server-dom-webpack": "19.2.6",
+    "typescript": "5.9.3",
+    "vinext": "1.0.0-beta.5",
+    "vite": "8.0.13",
+    "wrangler": "4.92.0"
+  },
+  "type": "module",
+  "overrides": {
+    "miniflare": {
+      "sharp": "0.35.4"
+    }
+  },
+  "packageManager": "pnpm@11.25.0"
 }

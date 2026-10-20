@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createCipheriv, createDecipheriv, pbkdf2Sync} from 'node:crypto';
-import {emptyState, MAX_BACKUP_BYTES, serializeBackup} from '../finance.mjs';
-import {ITERATIONS, MAX_ENCRYPTED_BYTES, newKdf, validateKdf, deriveKey, seal, unseal, encryptedBackup, backupWithKey, readBackup} from '../crypto.mjs';
+import {emptyState, MAX_BACKUP_BYTES, serializeBackup} from '../public/finance.mjs';
+import {ITERATIONS, MAX_ENCRYPTED_BYTES, newKdf, validateKdf, deriveKey, seal, unseal, encryptedBackup, backupWithKey, readBackup} from '../public/crypto.mjs';
 
 const password = 'senha de teste sintética';
 const otherPassword = 'outra senha sintética';
