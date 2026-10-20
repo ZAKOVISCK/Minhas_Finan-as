@@ -55,7 +55,7 @@ O teste isolado de IndexedDB/WebCrypto dispensa o servidor:
 python tests/storage.browser.py
 ```
 
-A suíte de compatibilidade aceita `--browser chromium|firefox|webkit|all`, endereço local, executável e diretório de evidências. Em um runner com permissão de instalar dependências, `python -m playwright install --with-deps firefox webkit` prepara as engines adicionais. Nesta nuvem, WebKit foi validado com bibliotecas em prefixo local e um helper; os detalhes estão nas evidências da entrega. Firefox foi instalado, mas seu processo não iniciou neste contêiner. WebKit Linux não equivale a Safari/iOS físico. Os testes não substituem verificação com teclado virtual e leitor de tela em aparelhos reais.
+A suíte de compatibilidade aceita `--browser chromium|firefox|webkit|all`, endereço local, executável e diretório de evidências. Em um runner com permissão de instalar dependências, `python -m playwright install --with-deps firefox webkit` prepara as engines adicionais. Nesta nuvem, WebKit foi validado com bibliotecas em prefixo local e um helper; os detalhes estão nas evidências da entrega. Firefox foi instalado, mas seu processo não iniciou neste contêiner. No runner independente da [CI](https://github.com/ZAKOVISCK/Minhas_Finan-as/actions/runs/39440149740), Chromium, Firefox e WebKit foram executados e aprovados. WebKit Linux não equivale a Safari/iOS físico. Os testes não substituem verificação com teclado virtual e leitor de tela em aparelhos reais.
 
 ## Fontes públicas
 

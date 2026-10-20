@@ -1,0 +1,56 @@
+{
+  "version": "1.1.0",
+  "testedCodeCommit": "ee4ecd1c3a1d05e922128b09d96fad09ad2d1535",
+  "ci": {
+    "url": "https://github.com/ZAKOVISCK/Minhas_Finan-as/actions/runs/39440149740",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "container",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (22)",
+        "conclusion": "success"
+      },
+      {
+        "name": "test (24)",
+        "conclusion": "success"
+      },
+      {
+        "name": "browsers",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "nativeTests": 153,
+  "nativeNodeVersions": [
+    22,
+    24
+  ],
+  "browserCommand": "python tests/compat.browser.py --browser all",
+  "browserEnginesPassed": [
+    "chromium",
+    "firefox",
+    "webkit"
+  ],
+  "scenariosPerEngine": 3,
+  "routeViewportCombinationsPerEngine": 32,
+  "physicalDeviceTested": false,
+  "humanScreenReaderTested": false,
+  "realPublicFeeds": {
+    "macro": 4,
+    "brazil": 10,
+    "global": 10,
+    "samples": 2
+  },
+  "deployment": {
+    "checkedAtUtc": "2026-10-20T14:38:25.481221+00:00",
+    "url": "https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site/",
+    "httpStatus": 200,
+    "publishedVersion": "1.0.1",
+    "indexSha256": "fa34006be625de866217780e7f5c8cc784796d950e11518aae1a8273eb766d82",
+    "requestedRelease": "1.1.0",
+    "deploymentApplied": false
+  }
+}

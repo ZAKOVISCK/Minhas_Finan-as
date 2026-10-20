@@ -8,7 +8,7 @@
 - Limite de plaintext/estado ampliado para 33 MiB, preservando margem para o catálogo na leitura de estados antigos próximos do limite anterior. Envelope criptografado permanece em 48 MiB.
 - Módulos formatados para revisão e manutenção. Política de conteúdo sem scripts ou estilos inline, lista pública restrita e backend privado não exposto como arquivo.
 - Docker/Compose com usuário sem privilégios, imagem fixada por digest, filesystem somente leitura, healthcheck e CI para Node 22/24 e imagem de produção. Procedimento de publicação e reversão em `DEPLOY.md`.
-- Regressões de categorias, formulários e backend adicionadas. Fluxos do cofre e layouts validados no Chromium e WebKit Linux. Firefox instalado, porém bloqueado no lançamento pelo contêiner; Safari/iOS físico e leitor de tela humano não foram executados.
+- Regressões de categorias, formulários e backend adicionadas. Fluxos do cofre e layouts validados no Chromium e WebKit Linux. Firefox instalado, porém bloqueado no lançamento pelo contêiner. No runner da CI, Chromium, Firefox e WebKit foram aprovados; Safari/iOS físico e leitor de tela humano não foram executados.
 
 A publicação no endereço existente depende do mecanismo da hospedagem. O repositório e o pacote de código não alteram automaticamente o site. Sincronização e conexão bancária continuam integrações opcionais, sem contratação ou simulação nesta entrega.
 
