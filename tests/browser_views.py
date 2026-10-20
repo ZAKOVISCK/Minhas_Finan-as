@@ -5,6 +5,7 @@ are positional arguments. Service workers are blocked here so the current source
 is exercised; offline delivery has separate coverage.
 """
 import json
+from browser_session import seed_fixture
 import os
 import re
 import sys
@@ -20,6 +21,7 @@ with sync_playwright() as pw:
  context=browser.new_context(locale='pt-BR',timezone_id='America/Sao_Paulo',service_workers='block',reduced_motion='reduce')
  page=context.new_page();page.on('pageerror',lambda e:results['errors'].append(str(e)))
  page.goto(BASE,wait_until='networkidle');page.locator('main[aria-busy=false]').wait_for()
+ seed_fixture(page)
  for width,height in [(1440,1000),(390,844),(320,568),(844,390),(768,1024)]:
   page.set_viewport_size({'width':width,'height':height})
   for route,label in ROUTES.items():

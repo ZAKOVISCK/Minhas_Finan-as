@@ -33,9 +33,7 @@ def raw(page,slot):
 
 
 def personal_dialog(page):
-    page.locator('#mode-label').click()
-    page.locator('#dialog-form [name="target"]').select_option('personal')
-    page.locator('#dialog-submit').click()
+    page.locator('#access-primary').click()
     page.locator('#dialog-form [name="password"]').wait_for()
     assert page.locator('#dialog-title').inner_text()=='Abrir cofre pessoal'
     assert page.locator('#dialog-form [name="confirmation"]').count()==0
@@ -149,58 +147,59 @@ with sync_playwright() as pw:
 
     def demo_orphan(page):
         seeded=page.evaluate('''async()=>{
-          const S=await import('/storage.mjs'),db=await S.openDatabase();
-          try{await new Promise((resolve,reject)=>{const tx=db.transaction('data','readwrite');tx.objectStore('data').delete('head:demo');tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error)});return JSON.parse(JSON.stringify(await S.loadRaw(db,'demo')))}finally{db.close()}
+          const S=await import('/storage.mjs'),F=await import('/finance.mjs'),db=await S.openDatabase();
+          try{
+            await S.saveSlot(db,'demo',null,F.demo(),-1);
+            await new Promise((resolve,reject)=>{const tx=db.transaction('data','readwrite');tx.objectStore('data').delete('head:demo');tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error)});
+            return JSON.parse(JSON.stringify(await S.loadRaw(db,'demo')));
+          }finally{db.close()}
         }''')
         ready(page)
-        page.locator('#storage-notice:not([hidden])').wait_for()
-        notice=page.locator('#storage-notice').inner_text()
-        assert 'preservados' in notice and 'Somente nesta sessão' not in page.locator('#storage-location').inner_text()
+        page.locator('#access-review:not([hidden])').wait_for()
         assert raw(page,'demo')==seeded
         with page.expect_download() as dl:
-            page.locator('#storage-notice [data-action="raw-export"]').click()
+            page.locator('#access-review [data-action="retired-demo-export"]').click()
         exported=json.loads(Path(dl.value.path()).read_text())
         assert exported['raw']==seeded
-        page.locator('#profile').click()
-        page.locator('#main [data-action="name"]').click()
-        assert not page.locator('#dialog').evaluate('(el)=>el.open')
+        assert page.locator('#main').inner_text()==''
+        assert page.locator('#access-screen').is_visible()
         assert raw(page,'demo')==seeded
-        return {'blockedNotice':notice,'preservedRecords':len(seeded['records']),'headStillAbsent':True,
-                'rawDownloadPreservesRecords':True,'ordinaryEditBlocked':True,'memoryFallbackNotUsed':True}
-    run('demo-orphan-bootstrap-preserves-and-blocks',demo_orphan)
+        return {'orphanRecordsPreserved':len(seeded['records']),'rawDownloadPreservesRecords':True,'financialDashboardClosed':True}
+    run('retired-demo-orphan-preserved-with-export',demo_orphan)
 
     def demo_checkpoint_only(page):
         seeded=page.evaluate('''async()=>{
           const S=await import('/storage.mjs'),F=await import('/finance.mjs'),db=await S.openDatabase();
           try{
-            const current=await S.decodeRaw(await S.loadRaw(db,'demo'));
+            const current=await S.saveSlot(db,'demo',null,F.demo(),-1);
             await S.saveSlot(db,'demo',current,F.emptyState('Atual vazio'),current.revision);
             await new Promise((resolve,reject)=>{const tx=db.transaction('data','readwrite');tx.objectStore('data').delete('head:demo');tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error)});
             const before=JSON.parse(JSON.stringify(await S.loadRaw(db,'demo')));
             let rejected=false;
             try{await S.saveSlot(db,'demo',null,F.demo(),-1)}catch(error){rejected=/Cabeçalho ausente/.test(error.message)}
-            const after=JSON.parse(JSON.stringify(await S.loadRaw(db,'demo')));
-            return {before,after,rejected};
+            return{before,after:JSON.parse(JSON.stringify(await S.loadRaw(db,'demo'))),rejected};
           }finally{db.close()}
         }''')
         assert not seeded['before']['records'] and seeded['before']['journal']['head']
         assert seeded['rejected'] and seeded['before']==seeded['after']
         ready(page)
-        page.locator('#storage-notice:not([hidden])').wait_for()
-        assert 'preservados' in page.locator('#storage-notice').inner_text()
+        page.locator('#access-review:not([hidden])').wait_for()
         assert raw(page,'demo')==seeded['before']
         with page.expect_download() as dl:
-            page.locator('#storage-notice [data-action="raw-export"]').click()
+            page.locator('#access-review [data-action="retired-demo-export"]').click()
         exported=json.loads(Path(dl.value.path()).read_text())
         assert exported['raw']==seeded['before']
-        page.locator('#profile').click()
+        recovered=page.evaluate('''async raw=>{const S=await import('/storage.mjs');return S.decodeRaw(S.previousRaw(raw))}''',exported['raw'])
+        assert recovered['accounts'] and recovered['name']!='Atual vazio'
+        before_personal=raw(page,'personal')
         page.once('dialog',lambda dialog:dialog.accept())
-        page.locator('#main [data-action="checkpoint"]').click()
-        page.locator('#storage-notice').wait_for(state='hidden')
-        restored=page.evaluate('''async()=>{const S=await import('/storage.mjs'),db=await S.openDatabase();try{return await S.decodeRaw(await S.loadRaw(db,'demo'))}finally{db.close()}}''')
-        assert restored['accounts'] and restored['name']!='Atual vazio'
-        return {'creationRejectedWithoutOverwrite':True,'bootstrapPreservesCheckpoint':True,'rawExportPreservesCheckpoint':True,'explicitRecoveryWorks':True}
-    run('demo-checkpoint-only-preserved-until-explicit-recovery',demo_checkpoint_only)
+        page.locator('#access-review [data-action="retired-demo-discard"]').click()
+        page.locator('#access-review').wait_for(state='hidden')
+        cleared=raw(page,'demo')
+        assert not cleared.get('head') and not cleared['records'] and not cleared.get('journal')
+        assert raw(page,'personal')==before_personal
+        return {'creationRejectedWithoutOverwrite':True,'checkpointExportAndDecodePassed':True,'explicitDiscardOnlyTouchesDemo':True}
+    run('retired-demo-checkpoint-export-and-explicit-discard',demo_checkpoint_only)
     browser.close()
 
 report={'results':results,'pageErrors':page_errors,'blockedRequests':blocked_requests}

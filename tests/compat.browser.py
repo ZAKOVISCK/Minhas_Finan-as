@@ -16,6 +16,7 @@ tests. Missing engines are reported as blocked and produce a nonzero exit code.
 """
 
 import argparse
+from browser_session import seed_fixture, reload_fixture, read_fixture
 import json
 import os
 import re
@@ -141,12 +142,9 @@ class Checks:
     def close(self):
         self.context.close()
 
-    def state(self, slot="demo"):
-        return self.page.evaluate("""async slot => {
-          const S=await import('/storage.mjs'),db=await S.openDatabase();
-          try {return await S.decodeRaw(await S.loadRaw(db,slot))}
-          finally {db.close()}
-        }""", slot)
+    def state(self, slot="personal"):
+        assert slot == "personal"
+        return read_fixture(self.page, PASSWORD)
 
     def raw_personal(self):
         return self.page.evaluate("""async () => {
@@ -170,11 +168,49 @@ class Checks:
         expect(self.page.locator("#dialog")).not_to_be_visible()
 
     def choose_personal(self):
-        self.page.locator('#demo-banner [data-action="personal"]').click()
-        self.page.locator('#dialog-form select[name="target"]').select_option("personal")
-        self.submit()
+        self.page.locator("#access-primary").click()
 
-    def demo_form_and_focus(self):
+    def first_access_empty_and_login(self):
+        expect(self.page.locator("#access-screen")).to_be_visible()
+        assert self.page.locator("#main").inner_text()==""
+        initial=self.page.evaluate("""async()=>{
+          const S=await import('/storage.mjs'),db=await S.openDatabase();
+          try{return {personal:await S.loadRaw(db,'personal'),demo:await S.loadRaw(db,'demo')}}finally{db.close()}
+        }""")
+        for raw in initial.values():assert not raw.get('head') and not raw['records'] and not raw.get('journal')
+        for width,height in [(320,568),(390,844),(768,1024),(1440,1000)]:
+            self.page.set_viewport_size({'width':width,'height':height})
+            assert self.page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
+        assert self.page.locator('#access-screen img').evaluate_all("els=>els.every(el=>el.complete&&el.naturalWidth>0)")
+        self.page.screenshot(path=str(self.args.output/f'{self.engine}-access.png'),full_page=True)
+        self.choose_personal()
+        self.fill("name",PRIVATE_NAME)
+        self.fill("password",PASSWORD)
+        self.fill("confirmation",PASSWORD)
+        self.submit()
+        expect(self.page.locator("#dialog-title")).to_have_text("Nova conta")
+        self.page.locator("#close-dialog").click()
+        fresh=self.state()
+        collections=["accounts","entries","payments","transfers","cards","budgets","reserves","goals","recurrences","assets","trades","dividends","prices","snapshots","watchlist"]
+        assert all(not fresh[name] for name in collections)
+        encrypted=self.raw_personal()
+        self.page.locator("#lock-button").click()
+        expect(self.page.locator("#access-screen")).to_be_visible()
+        assert PRIVATE_NAME not in self.page.locator("body").inner_text()
+        self.choose_personal()
+        self.fill("password","senha incorreta apenas para QA")
+        self.submit()
+        expect(self.page.locator("#dialog-error")).to_be_visible()
+        assert self.raw_personal()==encrypted
+        self.fill("password",PASSWORD);self.save()
+        self.page.reload(wait_until="domcontentloaded")
+        expect(self.page.locator("#access-screen")).to_be_visible()
+        self.choose_personal();self.fill("password",PASSWORD);self.save()
+        assert all(not self.state()[name] for name in collections)
+        return {"firstAccessCreatesNoDemo":True,"newVaultFinanciallyEmpty":True,"wrongPasswordPreservesRaw":True,"reloadRequiresLogin":True,"brandLoads":True,"loginViewportChecks":4}
+
+    def personal_form_and_focus(self):
+        seed_fixture(self.page,password=PASSWORD)
         before = self.state()
         self.navigate("lancamentos")
         self.page.locator('.page-heading [data-action="entry"]').click()
@@ -200,7 +236,7 @@ class Checks:
         self.fill("amount", "1.250,00")
         self.save()
         expect(self.page.locator(f'[data-action="entry"][data-id="{entry["id"]}"]')).to_be_focused()
-        self.page.reload(wait_until="domcontentloaded")
+        reload_fixture(self.page,PASSWORD)
         expect(self.page.locator("#main")).to_have_attribute("aria-busy", "false")
         persisted = next(item for item in self.state()["entries"] if item["id"] == entry["id"])
         assert persisted["amount"] == 125000
@@ -241,7 +277,8 @@ class Checks:
             assert decoded["name"] == PRIVATE_NAME and len(decoded["entries"]) == 1
             assert decoded["entries"][0]["description"] == PRIVATE_ENTRY and decoded["entries"][0]["amount"] == 1234
         self.page.locator("#lock-button").click()
-        expect(self.page.locator("#mode-label")).to_have_text("Demonstração")
+        expect(self.page.locator("#access-screen")).to_be_visible()
+        expect(self.page.locator("#mode-label")).to_have_text("Cofre bloqueado")
         expect(self.page.locator("#lock-button")).to_be_hidden()
         visible = self.page.locator("body").inner_text()
         fields = self.page.locator("input,textarea,select").evaluate_all("els => els.map(el=>el.value).join('\\n')")
@@ -312,12 +349,13 @@ class Checks:
         try:
             page.goto(self.args.base_url+'/',wait_until='domcontentloaded')
             expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            seed_fixture(page,password=PASSWORD)
             page.evaluate("""async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}))}""")
-            page.reload(wait_until='domcontentloaded')
+            reload_fixture(page,PASSWORD)
             expect(page.locator('#main')).to_have_attribute('aria-busy','false')
-            assert page.locator('meta[name="application-version"]').get_attribute('content')=='1.1.2'
+            assert page.locator('meta[name="application-version"]').get_attribute('content')=='1.2.0'
             context.set_offline(True)
-            page.reload(wait_until='domcontentloaded')
+            reload_fixture(page,PASSWORD)
             expect(page.locator('#main')).to_have_attribute('aria-busy','false')
             for route,label in ROUTES.items():
                 page.evaluate('(route)=>location.hash=route',route)
@@ -328,7 +366,7 @@ class Checks:
             page.locator('input[name="amount"]').fill('12,34')
             page.locator('#dialog-submit').click()
             expect(page.locator('#dialog')).not_to_be_visible()
-            page.reload(wait_until='domcontentloaded')
+            reload_fixture(page,PASSWORD)
             expect(page.locator('#main')).to_have_attribute('aria-busy','false')
             expect(page.locator('#ledger-results')).to_contain_text('Registro sintético offline')
             assert not errors,errors
@@ -339,19 +377,14 @@ class Checks:
 
     def load_history_fixture(self):
         fixture=json.loads((Path(__file__).parent/'fixtures/history.json').read_text())
-        self.page.evaluate("""async state=>{
-          const S=await import('/storage.mjs'),db=await S.openDatabase();
-          try{const before=await S.decodeRaw(await S.loadRaw(db,'demo'));await S.saveSlot(db,'demo',before,state,before.revision)}finally{db.close()}
-        }""",fixture)
-        self.page.reload(wait_until='domcontentloaded')
-        expect(self.page.locator('#main')).to_have_attribute('aria-busy','false')
+        seed_fixture(self.page,state=fixture,password=PASSWORD)
         return fixture
 
     def history_cash(self):
-        return self.page.evaluate("""async()=>{
-          const S=await import('/storage.mjs'),F=await import('/finance.mjs'),db=await S.openDatabase();
-          try{const state=await S.decodeRaw(await S.loadRaw(db,'demo'));return {bank:F.balances(state).get('bank'),broker:F.balances(state).get('broker'),cost:F.portfolio(state).cost}}finally{db.close()}
-        }""")
+        return self.page.evaluate("""async state=>{
+          const F=await import('/finance.mjs');
+          return {bank:F.balances(state).get('bank'),broker:F.balances(state).get('broker'),cost:F.portfolio(state).cost}
+        }""",self.state())
 
     def history_desktop_actions(self):
         fixture=self.load_history_fixture()
@@ -386,7 +419,7 @@ class Checks:
         assert sum(d['status']=='received' for d in received['dividends'])==1
         assert self.history_cash()['broker']==after_trade['broker']+1234
         for _ in range(2):
-            self.page.reload(wait_until='domcontentloaded')
+            reload_fixture(self.page,PASSWORD)
             expect(self.page.locator('#main')).to_have_attribute('aria-busy','false')
             assert self.history_cash()['broker']==after_trade['broker']+1234
             assert len(self.state()['dividends'])==65
@@ -394,7 +427,7 @@ class Checks:
         self.page.once('dialog',lambda dialog:dialog.accept())
         self.page.locator('[data-action="delete-dividend"][data-id="dividend-000"]').click()
         expect(self.page.locator('[data-action="delete-dividend"][data-id="dividend-000"]')).to_have_count(0)
-        self.page.reload(wait_until='domcontentloaded')
+        reload_fixture(self.page,PASSWORD)
         expect(self.page.locator('#main')).to_have_attribute('aria-busy','false')
         final=self.state()
         assert len(final['transfers'])==24 and len(final['trades'])==64 and len(final['dividends'])==64
@@ -424,6 +457,7 @@ class Checks:
         return {'mobileNavigationPassed':True,'threeHistoriesNavigable':True,'noHorizontalOverflow':True,'touchViewport':{'width':320,'height':568}}
 
     def responsive_and_accessible_names(self):
+        seed_fixture(self.page,password=PASSWORD)
         layouts = []
         for width, height in [(320, 568), (390, 844), (844, 390), (768, 1024)]:
             self.page.set_viewport_size({"width": width, "height": height})
@@ -490,7 +524,7 @@ def main():
                 continue
             record["browserVersion"] = browser.version
             try:
-                for scenario in ("demo_form_and_focus", "vault_and_encrypted_backup", "legacy_vault_upgrade", "installed_offline_core", "history_desktop_actions", "history_mobile_navigation", "responsive_and_accessible_names"):
+                for scenario in ("first_access_empty_and_login", "personal_form_and_focus", "vault_and_encrypted_backup", "legacy_vault_upgrade", "installed_offline_core", "history_desktop_actions", "history_mobile_navigation", "responsive_and_accessible_names"):
                     checks = None
                     outcome = {"name": scenario, "passed": False}
                     try:

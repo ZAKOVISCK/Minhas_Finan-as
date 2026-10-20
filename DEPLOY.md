@@ -1,4 +1,4 @@
-# Publicação da versão 1.1.2 no projeto original
+# Publicação da versão 1.2.0 no projeto original
 
 Projeto Sites `appgprj_6ad60d588e3c819189574322fd3a67a9`; origem HTTPS preservada:
 https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site . Audiência pública, sem login de plataforma. Não adicionar D1/R2 nem transferir cofres ao servidor.
@@ -56,3 +56,9 @@ Mantenha 1.1.2 ou posterior para conservar estas correções. Reverter o servido
 ## Alternativa Node
 
 `node server.mjs` ou `docker compose up --build --detach` executa o mesmo frontend e as quatro APIs. Configure proxy HTTPS que preserve Host e cabeçalhos; o bind padrão do Compose é somente localhost. O domínio original continua controlado pelo Sites; iniciar um Node em outro endereço não transfere os cofres.
+
+## Validação adicional da 1.2.0
+
+Confirme a tela de acesso, criação vazia, senha incorreta sem alteração de bytes, bloqueio/novo acesso e acesso offline. Valide a limpeza apenas dos exemplos reconhecidos e a exportação dos registros alterados para revisão. Todos os 17 arquivos públicos devem corresponder ao manifesto. Os ícones novos precisam entrar no precache da 1.2.0; cofres e schema não devem ser reinicializados.
+
+Esta revisão deve ser publicada pelo fluxo de Sites no mesmo projeto. Enquanto o ambiente de execução não estiver disponível para abrir o source, compilar e empacotar, mantenha a candidata na branch e a produção 1.1.2 na main. Nunca publique um pacote da versão anterior com o SHA novo.

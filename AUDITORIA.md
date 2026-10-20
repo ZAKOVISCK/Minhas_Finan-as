@@ -25,3 +25,11 @@ Todos os testes usam perfis temporários e dados fictícios. Cofres reais não s
 ## Verificação da hospedagem e correção 1.1.2
 
 O teste público da primeira publicação 1.1.1 comprovou que Sites ainda servia assets diretamente sem os novos cabeçalhos. A versão 1.1.2 elimina esse caminho: o conjunto fechado entra no bundle do Worker e não é copiado para o diretório estático. A recusa de arquivos privados continua, assim como a identidade dos bytes, MIME e ETag. O SW ganha cache novo para que a política também seja atualizada nos clientes que instalaram a 1.1.1.
+
+## Candidata 1.2.0 — acesso e retirada da demonstração
+
+A base desta mudança é `b0c5014b61817a5c89f354631ba32937b03845ae`, conferida na main e na publicação antes da edição. A tela fica fechada por padrão no HTML e o controlador só libera o painel após criar/desbloquear o cofre. Não há mais semente automática nem edição financeira sem chave. A marca vetorial e os PNGs são próprios desta revisão.
+
+A exclusão do espaço demo compara atomicamente a cópia completa. Somente exemplos intactos e checkpoints conhecidos são removidos automaticamente; qualquer alteração ou corrupção é preservada para revisão. A limpeza não acessa as chaves do slot pessoal nem o legado. As oito regressões nativas de acesso/retirada incluem reabertura, comparação dos bytes criptografados, checkpoint, dados alterados, órfãos, CAS e descarte explícito. A compatibilidade agora inclui o primeiro acesso vazio e exige novo desbloqueio após reload.
+
+Resultados devem ser consultados na CI do commit candidato. A publicação permanece pendente enquanto o ambiente Sites de execução/empacotamento estiver indisponível; esta seção não declara publicação ou aprovação antecipada.

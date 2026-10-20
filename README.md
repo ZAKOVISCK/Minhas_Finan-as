@@ -1,4 +1,4 @@
-# Minhas Finanças 1.1.2
+# Minhas Finanças 1.2.0
 
 Finanças pessoais locais, com cofre criptografado, demonstração separada, controle financeiro, carteira e fontes econômicas públicas. Sem assinatura, credenciais bancárias ou APIs pagas.
 
@@ -60,10 +60,30 @@ O mesmo domínio e o IndexedDB são mantidos. Schema 3, envelope 1, AES-GCM e KD
 
 Históricos de transferências, operações e proventos têm paginação independente e ações até o registro mais antigo. Os cálculos usam o conjunto completo, independentemente da página. A navegação de páginas não grava alterações financeiras.
 
-O cache `mf-core-1.1.2` instala todos os assets de forma atômica. **Atualizar aplicativo** ativa a versão aguardando; as outras abas preservam seus arquivos até recarregar. Não limpe os dados do site para atualizar.
+O cache `mf-core-1.2.0` instala todos os assets de forma atômica. **Atualizar aplicativo** ativa a versão aguardando; as outras abas preservam seus arquivos até recarregar. Não limpe os dados do site para atualizar.
 
 A rotina **Verify original public Site** (disparo manual ou criação de uma branch `codex/verify-public-*` depois da publicação) verifica novamente os mesmos cenários em produção, somente no domínio autorizado e com contextos novos e descartáveis; seus resultados não são somados aos da CI local. `node scripts/verify-public.mjs --commit <SHA>` confere bytes, cabeçalhos, APIs e controles de acesso.
 
 `/version.json` e `X-App-Source-Commit` identificam o commit GitHub usado no build publicado. O commit interno Sites e o commit GitHub podem ter pais diferentes, mas devem ter a mesma árvore de arquivos. O procedimento está em [DEPLOY.md](DEPLOY.md); as correções e limites em [AUDITORIA.md](AUDITORIA.md).
 
 BCB/IBGE, notícias IBGE, comunicados Fed e duas amostras brapi dependem de conexão e disponibilidade externa. Não há promessa de bolsa completa ou cotação em tempo real. Cofres, senhas e registros financeiros não são enviados às APIs. Backups externos continuam necessários.
+
+## Acesso e primeiro uso — 1.2.0
+
+A tela inicial exige criar ou desbloquear o cofre antes de mostrar o painel. No primeiro acesso, informe seu nome e uma senha de pelo menos 12 caracteres. O cofre começa sem contas, lançamentos, pagamentos, posições ou investimentos. Categorias padrão são uma estrutura de organização, sem valores financeiros.
+
+O login é local: a senha deriva a chave AES-GCM e não é enviada ao servidor. Reabrir a página pede a senha novamente. **Bloquear cofre** encerra a sessão e remove os dados pessoais da interface; rascunhos desta sessão são conservados somente se puderem ser criptografados. Os bloqueios automáticos e a troca completa de senha permanecem.
+
+Cada navegador/dispositivo possui seu próprio cofre. Para usar em outro aparelho, exporte o backup criptografado e restaure-o no outro navegador. Não há conta por e-mail, sincronização em nuvem ou recuperação de senha pelo servidor.
+
+### Retirada dos exemplos
+
+O app não chama mais a fábrica de demonstração nem abre uma sessão financeira sem criptografia. No carregamento, `access.mjs` reconhece somente o exemplo original intacto, incluindo seu checkpoint. A exclusão usa uma comparação atômica da cópia completa em `removeDemoSlot`; apenas as chaves e registros de `demo` são removidos. O cofre `personal`, checkpoints pessoais, backups e cópias legadas potencialmente reais permanecem.
+
+Demonstrações alteradas, órfãs, corrompidas ou com checkpoints diferentes ficam separadas, fora do painel pessoal. A tela oferece exportar a cópia bruta para revisão e um descarte explícito; não há importação silenciosa para o cofre. Isso evita apagar um lançamento real que tenha sido digitado no antigo espaço de testes.
+
+O banco mantém o nome e a versão existentes para preservar cofres. Atualize/recarregue as outras abas: uma aba antiga ainda pode executar o código antigo. Não limpe IndexedDB ou dados do site para atualizar.
+
+### Identidade visual
+
+`public/icon.svg` contém a marca vetorial de carteira em verde, branco e menta. O mesmo desenho aparece na entrada, menu, favicon e ícones PWA 192/512. `node scripts/brand-icons.mjs` reproduz os PNGs sem dependências adicionais.

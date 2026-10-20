@@ -6,6 +6,7 @@ Requires Python Playwright and Chromium. Service workers and external requests a
 blocked; every test gets a new disposable browser profile.
 """
 import json
+from browser_session import seed_fixture, reload_fixture, read_fixture, decrypt_fixture_backup, TEST_PASSWORD
 import os
 import sys
 import tempfile
@@ -41,12 +42,14 @@ class CategoryController(unittest.TestCase):
         self.page.goto(BASE, wait_until='networkidle')
         expect(self.page.locator('#main')).to_have_attribute('aria-busy', 'false')
 
+        seed_fixture(self.page)
+
     def tearDown(self):
         self.context.close()
         self.assertEqual(self.errors, [])
 
     def state(self):
-        return self.page.evaluate('''async()=>{const S=await import('/storage.mjs'),db=await S.openDatabase();try{return await S.decodeRaw(await S.loadRaw(db,'demo'))}finally{db.close()}}''')
+        return self.page.evaluate('''async()=>{const S=await import('/storage.mjs'),db=await S.openDatabase();try{return await (async()=>{const qaRaw=await S.loadRaw(db,'personal'),qaCrypto=await import('/crypto.mjs');return S.decodeRaw(qaRaw,await qaCrypto.deriveKey("senha sintética exclusiva das fixtures QA 2026",qaRaw.head.kdf));})()}finally{db.close()}}''')
 
     def navigate(self, view):
         self.page.locator(f'#nav [data-view="{view}"]').click()
@@ -55,6 +58,8 @@ class CategoryController(unittest.TestCase):
         self.page.locator(f'#dialog-form input[name="{field}"]').fill(value)
 
     def save(self):
+        password = self.page.locator('#dialog-form input[name="password"]')
+        if password.count() and not password.input_value(): password.fill(TEST_PASSWORD)
         self.page.locator('#dialog-submit').click()
         expect(self.page.locator('#dialog')).not_to_be_visible()
 
@@ -149,7 +154,7 @@ class CategoryController(unittest.TestCase):
                 self.page.locator('footer [data-action="backup"]').click()
             backup = Path(folder)/'categories.json'
             download.value.save_as(backup)
-            saved = json.loads(backup.read_text())
+            saved = decrypt_fixture_backup(self.page, backup.read_text())
             self.assertEqual(saved['categories'], archived['categories'])
             self.edit_category(category['id'], 'Nome que será desfeito')
             self.page.locator('#main [data-action="restore"]').click()

@@ -4,6 +4,7 @@ Run with npm start active: python tests/app.browser.py [local_base_url]
 Requires Python Playwright and Chromium; never contacts a deployed application.
 """
 import json
+from browser_session import seed_fixture, reload_fixture, read_fixture, decrypt_fixture_backup, TEST_PASSWORD
 import os
 import sys
 import tempfile
@@ -43,12 +44,14 @@ class ControllerFlows(unittest.TestCase):
             self.context.close()
             self.fail(str(error)+'\nStartup diagnostics: '+json.dumps(details,ensure_ascii=False))
 
+        seed_fixture(self.page)
+
     def tearDown(self):
         self.context.close()
         self.assertEqual(self.errors, [])
 
     def state(self):
-        return self.page.evaluate('''async()=>{const S=await import('/storage.mjs');const db=await S.openDatabase();try{return await S.decodeRaw(await S.loadRaw(db,'demo'))}finally{db.close()}}''')
+        return self.page.evaluate('''async()=>{const S=await import('/storage.mjs');const db=await S.openDatabase();try{return await (async()=>{const qaRaw=await S.loadRaw(db,'personal'),qaCrypto=await import('/crypto.mjs');return S.decodeRaw(qaRaw,await qaCrypto.deriveKey("senha sintética exclusiva das fixtures QA 2026",qaRaw.head.kdf));})()}finally{db.close()}}''')
 
     def navigate(self, route):
         self.page.locator(f'#nav [data-view="{route}"]').click()
@@ -57,6 +60,8 @@ class ControllerFlows(unittest.TestCase):
         self.page.locator(f'#dialog-form input[name="{name}"]').fill(value)
 
     def save(self):
+        password = self.page.locator('#dialog-form input[name="password"]')
+        if password.count() and not password.input_value(): password.fill(TEST_PASSWORD)
         self.page.locator('#dialog-submit').click()
         expect(self.page.locator('#dialog')).not_to_be_visible()
 
@@ -105,7 +110,7 @@ class ControllerFlows(unittest.TestCase):
         self.assertEqual(after['payments'], before['payments'])
         self.assertEqual(len(after['transfers']), len(before['transfers']) + 1)
         self.assertEqual(after['transfers'][-1]['amount'], 1000)
-        deltas = self.page.evaluate('''async before=>{const F=await import('/finance.mjs'),S=await import('/storage.mjs');const db=await S.openDatabase();try{const after=await S.decodeRaw(await S.loadRaw(db,'demo')),a=F.balances(before),b=F.balances(after);return {bank:b.get('bank')-a.get('bank'),broker:b.get('broker')-a.get('broker')}}finally{db.close()}}''', before)
+        deltas = self.page.evaluate('''async before=>{const F=await import('/finance.mjs'),S=await import('/storage.mjs');const db=await S.openDatabase();try{const after=await (async()=>{const qaRaw=await S.loadRaw(db,'personal'),qaCrypto=await import('/crypto.mjs');return S.decodeRaw(qaRaw,await qaCrypto.deriveKey("senha sintética exclusiva das fixtures QA 2026",qaRaw.head.kdf));})(),a=F.balances(before),b=F.balances(after);return {bank:b.get('bank')-a.get('bank'),broker:b.get('broker')-a.get('broker')}}finally{db.close()}}''', before)
         self.assertEqual(deltas, {'bank': -1000, 'broker': 1000})
 
     def test_card_purchase_and_statement_payment_do_not_duplicate_expense(self):
@@ -158,14 +163,17 @@ class ControllerFlows(unittest.TestCase):
             restored = self.state()
             for key in original:
                 if key != 'revision': self.assertEqual(restored[key], original[key], key)
-            encrypted = self.page.evaluate('''async()=>{const S=await import('/storage.mjs'),C=await import('/crypto.mjs');const db=await S.openDatabase();try{return await C.encryptedBackup(await S.decodeRaw(await S.loadRaw(db,'demo')),'senha-apenas-para-teste')}finally{db.close()}}''')
+            encrypted = self.page.evaluate('''async()=>{const S=await import('/storage.mjs'),C=await import('/crypto.mjs');const db=await S.openDatabase();try{return await C.encryptedBackup(await (async()=>{const qaRaw=await S.loadRaw(db,'personal'),qaCrypto=await import('/crypto.mjs');return S.decodeRaw(qaRaw,await qaCrypto.deriveKey("senha sintética exclusiva das fixtures QA 2026",qaRaw.head.kdf));})(),'senha-apenas-para-teste')}finally{db.close()}}''')
             self.page.locator('#main [data-action="restore"]').click()
             self.page.locator('#file-input').set_input_files({'name':'copia.mfbackup','mimeType':'application/json','buffer':('\ufeff'+encrypted).encode()})
             expect(self.page.locator('#dialog-title')).to_have_text('Restaurar backup')
             self.fill('password', 'senha-apenas-para-teste')
-            self.page.locator('#dialog-submit').click()
-            expect(self.page.locator('#dialog-error')).to_contain_text('Abra seu cofre pessoal')
-            self.assertEqual(self.state(), restored)
+            self.page.once('dialog', lambda dialog: dialog.accept())
+            self.save()
+            after_encrypted_restore = self.state()
+            for field, value in restored.items():
+                if field != 'revision': self.assertEqual(after_encrypted_restore[field], value, field)
+            self.assertEqual(after_encrypted_restore['payments'], restored['payments'])
 
     def test_draft_survives_month_and_privacy_changes(self):
         before = self.state()

@@ -1,3 +1,12 @@
+## 1.2.0 — acesso para uso pessoal
+
+- Tela de acesso local por senha, criação no primeiro uso e bloqueio ao sair/reabrir, usando o cofre criptografado existente.
+- Nova marca vetorial de carteira, integrada à entrada, menu, favicon e ícones instaláveis.
+- Fim da abertura/criação automática de demonstrações e do botão de reinicializar exemplos.
+- Limpeza atômica apenas dos exemplos intactos; alterações, dados órfãos e checkpoints desconhecidos são preservados separadamente para exportação e descarte explícito.
+- Nenhuma alteração no schema financeiro, nome/versão do IndexedDB ou envelope de backup. Cofres pessoais continuam compatíveis.
+- Testes do primeiro acesso vazio, novo login, privacidade, limpeza com concorrência e preservação do cofre pessoal. Fixtures dos testes de navegador passam a ser criadas explicitamente em cofres sintéticos criptografados.
+
 # Correção de hospedagem 1.1.2
 
 - Assets servidos em bytes pelo Worker, com `publicDir:false`, para garantir cabeçalhos mesmo quando Sites ignora o roteamento de arquivos enviados.

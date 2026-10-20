@@ -35,5 +35,5 @@ test('Node: o servidor reproduzível entrega todos os arquivos com cabeçalhos e
  }
  const local=await fetch(base+'/');assert.doesNotMatch(local.headers.get('content-security-policy'),/upgrade-insecure-requests/);await local.arrayBuffer();
  const secure=await fetch(base+'/',{headers:{'X-Forwarded-Proto':'https'}});assert.match(secure.headers.get('content-security-policy'),/upgrade-insecure-requests/);await secure.arrayBuffer();
- const release=await(await fetch(base+'/version.json')).json();assert.equal(release.version,'1.1.2');assert.equal(release.repository,'https://github.com/ZAKOVISCK/Minhas_Finan-as');
+ const release=await(await fetch(base+'/version.json')).json();assert.equal(release.version,'1.2.0');assert.equal(release.repository,'https://github.com/ZAKOVISCK/Minhas_Finan-as');
 });

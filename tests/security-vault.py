@@ -71,9 +71,7 @@ class VaultSecurity(unittest.TestCase):
 
     def create_personal_records(self):
         self.start()
-        self.page.locator('#demo-banner [data-action="personal"]').click()
-        self.page.locator('#dialog select[name="target"]').select_option("personal")
-        self.submit()
+        self.page.locator('#access-primary').click()
         expect(self.page.locator("#dialog-title")).to_have_text("Criar meu cofre pessoal")
         self.page.locator('#dialog input[name="name"]').fill(PRIVATE_NAME)
         self.page.locator('#dialog input[name="password"]').fill(PASSWORD)
@@ -115,9 +113,7 @@ class VaultSecurity(unittest.TestCase):
         self.page.locator("#search").fill(PRIVATE_ENTRY)
 
     def unlock(self):
-        self.page.locator('#demo-banner [data-action="personal"]').click()
-        self.page.locator('#dialog select[name="target"]').select_option("personal")
-        self.submit()
+        self.page.locator('#access-primary').click()
         expect(self.page.locator("#dialog-title")).to_have_text("Abrir cofre pessoal")
         self.page.locator('#dialog input[name="password"]').fill(PASSWORD)
         self.submit()
@@ -152,12 +148,11 @@ class VaultSecurity(unittest.TestCase):
         self.page.locator("#lock-button").click()
         self.page.wait_for_function("() => window.__vaultTestEncryptStarted === true")
         # Assert before the held encryption completes, not after the transition.
-        expect(self.page.locator("#mode-label")).to_have_text("Demonstração")
+        expect(self.page.locator("#mode-label")).to_have_text("Cofre bloqueado")
         self.assert_private_dom_cleared()
         self.page.evaluate("window.__vaultTestRelease()")
         self.page.wait_for_function("() => document.querySelector('#toast').textContent.includes('Cofre bloqueado')")
-        self.navigate("lancamentos")
-        expect(self.page.locator("#search")).to_have_value("")
+        self.assertEqual(self.page.locator("#main").inner_text(), "")
         self.unlock()
         self.navigate("lancamentos")
         expect(self.page.locator("#ledger-results")).to_contain_text(PRIVATE_ENTRY)
@@ -174,11 +169,10 @@ class VaultSecurity(unittest.TestCase):
             crypto.subtle.encrypt = () => Promise.reject(new Error('Falha sintética de criptografia'));
         }""")
         self.page.locator("#lock-button").click()
-        expect(self.page.locator("#mode-label")).to_have_text("Demonstração")
+        expect(self.page.locator("#mode-label")).to_have_text("Cofre bloqueado")
         self.assert_private_dom_cleared()
         self.page.evaluate("delete crypto.subtle.encrypt")
-        self.navigate("lancamentos")
-        expect(self.page.locator("#search")).to_have_value("")
+        self.assertEqual(self.page.locator("#main").inner_text(), "")
         self.unlock()
         self.navigate("lancamentos")
         expect(self.page.locator("#ledger-results")).to_contain_text(PRIVATE_ENTRY)
@@ -201,23 +195,21 @@ class VaultSecurity(unittest.TestCase):
             expect(self.page.locator("#main h1")).to_contain_text(PRIVATE_NAME)
         self.assertEqual(self.errors, [])
 
-    def test_temporary_memory_session_ignores_database_broadcast(self):
+    def test_storage_unavailable_refuses_unencrypted_financial_session(self):
         self.context.add_init_script("Object.defineProperty(window, 'indexedDB', {value: undefined})")
         self.start()
-        expect(self.page.locator("#storage-notice")).to_contain_text("apenas nesta sessão")
+        expect(self.page.locator("#access-screen")).to_be_visible()
+        expect(self.page.locator("#access-primary")).to_be_disabled()
+        expect(self.page.locator("#access-status")).to_contain_text("preservados")
+        self.assertEqual(self.page.locator("#main").inner_text(), "")
         self.page.evaluate("""async () => {
             const channel = new BroadcastChannel('minhas-financas-v3');
-            channel.postMessage({slot: 'demo', revision: 999999});
+            channel.postMessage({slot: 'personal', revision: 999999});
             await new Promise(resolve => setTimeout(resolve, 100));
             channel.close();
         }""")
-        self.assertNotIn("Outra aba", self.page.locator("#storage-notice").inner_text())
-        self.page.locator('#main .page-heading [data-action="entry"]').click()
-        self.page.locator('#dialog input[name="description"]').fill("SESSAO-TEMPORARIA-QX7")
-        self.page.locator('#dialog input[name="amount"]').fill("1,00")
-        self.submit()
+        self.assertNotIn("Outra aba", self.page.locator("#access-status").inner_text())
         expect(self.page.locator("#dialog")).not_to_be_visible()
-        expect(self.page.locator("#save-status")).to_have_text("Alterações apenas nesta sessão")
         self.assertEqual(self.errors, [])
 
 

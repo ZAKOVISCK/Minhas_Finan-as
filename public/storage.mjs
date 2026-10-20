@@ -483,3 +483,33 @@ export async function storageInfo() {
 export async function requestPersistence() {
   return (await globalThis.navigator?.storage?.persist?.()) ?? false;
 }
+
+/** Delete only the retired demo slot, with an atomic snapshot comparison.
+ * Personal roots, records, checkpoints and legacy data are never addressed.
+ */
+export function removeDemoSlot(db, expectedRaw) {
+  if (expectedRaw?.slot !== "demo" || !Array.isArray(expectedRaw.records))
+    return Promise.reject(new Error("Informe uma cópia válida do espaço de testes."));
+  const expected = JSON.stringify({slot:"demo",head:expectedRaw.head,records:expectedRaw.records,journal:expectedRaw.journal});
+  return new Promise((resolve,reject) => {
+    let failure, remaining=3, head, records, journal;
+    const tx=db.transaction(["data","records"],"readwrite"),data=tx.objectStore("data"),store=tx.objectStore("records");
+    const ready=()=>{
+      if(--remaining)return;
+      try {
+        const current=JSON.stringify({slot:"demo",head,records,journal});
+        if(current!==expected)throw new StorageConflict();
+        data.delete("head:demo");
+        data.delete("checkpoint:demo");
+        for(const record of records)store.delete(record.key);
+      } catch(error) {failure=error;tx.abort();}
+    };
+    const h=data.get("head:demo"),r=store.index("slot").getAll("demo"),j=data.get("checkpoint:demo");
+    h.onsuccess=()=>{head=h.result;ready();};
+    r.onsuccess=()=>{records=r.result;ready();};
+    j.onsuccess=()=>{journal=j.result;ready();};
+    tx.oncomplete=()=>resolve();
+    tx.onabort=()=>reject(failure||tx.error||new Error("A limpeza não foi concluída."));
+    tx.onerror=()=>{};
+  });
+}

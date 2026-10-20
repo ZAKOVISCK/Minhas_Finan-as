@@ -94,3 +94,46 @@ input[aria-invalid="true"],select[aria-invalid="true"]{border-color:var(--red);b
 
 /* Históricos completos: paginação independente, alvos de toque e foco visível. */
 .history-list{min-width:0}.history-list>p{margin-bottom:8px}.history-pagination{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}.history-pagination>span{flex:1 1 100%;font-size:12px}.history-controls{display:flex;flex-wrap:wrap;gap:8px;width:100%}.history-controls .secondary{flex:1 1 90px;min-height:44px;padding:8px 10px;font-size:12px}.history-rows:focus,.history-pagination [role="status"]:focus{outline:3px solid #276dc7;outline-offset:3px}.history-rows .list-row{flex-wrap:wrap}.history-rows .list-row>div:first-child{flex:1 1 160px;min-width:0}.history-rows .list-row b{overflow-wrap:anywhere}@media(max-width:650px){.history-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.history-pagination>span{text-align:center}.history-rows .list-row .text-link{min-height:44px}}
+
+/* Identity and local access: no dashboard is shown before vault unlock. */
+[hidden]{display:none!important}
+body.is-locked{background:#f3f7f6}
+body.is-locked>.sidebar,body.is-locked>.app,body.is-locked>#mobile-nav,body.is-locked>.skip-link{display:none!important}
+.brand-logo{display:block;flex:none;border-radius:10px}
+.access-screen{min-height:100dvh;padding:clamp(20px,5vw,76px);display:grid;place-items:center;background:radial-gradient(ellipse at 8% 20%,#e6f2ed 0,transparent 55%),#f3f7f6}
+.access-layout{width:min(1120px,100%);display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(36px,7vw,112px);align-items:center}
+.access-story{min-width:0;align-self:stretch;display:flex;flex-direction:column;justify-content:space-between;gap:56px;padding:16px 0}
+.access-brand{display:flex;gap:14px;align-items:center;color:var(--ink);font-size:23px;font-weight:750;text-decoration:none;letter-spacing:-.7px}
+.access-brand img,.access-card-top img{border-radius:14px;flex:none}
+.access-story-copy .eyebrow{letter-spacing:2px;font-size:11px}
+.access-headline{font-size:clamp(35px,4vw,53px);font-weight:720;line-height:1.13;letter-spacing:-2px;margin:20px 0 24px;color:#173c35}
+.access-headline span{color:#789188;font-weight:500}
+.access-story-copy>p:last-child{max-width:350px;font-size:16px;line-height:1.7;color:var(--muted)}
+.access-signature{display:flex;gap:9px;align-items:center;color:#526f65;font-size:12px}
+.access-card{min-width:0;background:#fff;border:1px solid #e2ebe6;border-radius:26px;padding:clamp(24px,3.5vw,44px);box-shadow:0 20px 70px #16392c08}
+.access-card-top{display:flex;align-items:center;justify-content:space-between;gap:18px;color:#58746a;font-size:10px;font-weight:750;letter-spacing:1.7px}
+.access-card h1{font-size:clamp(27px,2.7vw,35px);line-height:1.18;letter-spacing:-1px;margin:32px 0 14px}
+#access-caption{color:var(--muted);line-height:1.6;margin:0 0 25px;font-size:14px}
+.access-primary{width:100%;min-height:50px;justify-content:center;font-size:14px;border-radius:12px}
+.access-local{text-align:center;font-size:11px;color:var(--muted);margin:12px 0 28px}
+.access-features{display:grid;gap:18px;padding:22px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.access-features>div{display:flex;gap:12px;align-items:flex-start}
+.access-features>div>span{display:grid;place-items:center;flex:none;background:var(--mint);color:var(--green);width:30px;height:30px;border-radius:9px}
+.access-features p{margin:0;font-size:12px;line-height:1.5}
+.access-features small{display:block;color:var(--muted);margin-top:3px;font-size:11px}
+.access-status{font-size:11px;color:var(--muted);line-height:1.6;margin:18px 0}
+.access-footer{display:flex;gap:12px;align-items:center;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:24px}
+.access-footer button{font-size:11px;min-height:36px}
+.access-card .notice{margin-top:18px;font-size:12px;overflow-wrap:anywhere}
+.access-card button{white-space:normal}
+@media(max-width:760px){
+ .access-screen{display:block;padding:24px 20px 40px}
+ .access-layout{grid-template-columns:1fr;gap:24px;max-width:480px;margin:auto}
+ .access-story{padding:0;gap:0}
+ .access-brand{font-size:20px;gap:12px}
+ .access-brand img{width:42px;height:42px}
+ .access-story-copy,.access-signature{display:none}
+ .access-card{padding:26px 23px;border-radius:22px}
+ .access-card h1{margin-top:25px}
+}
+@media(prefers-reduced-motion:reduce){.access-screen *{scroll-behavior:auto}}

@@ -6,6 +6,7 @@ import {
   decodeRaw,
   previousRaw,
   saveSlot,
+  removeDemoSlot,
   storageInfo,
   requestPersistence,
   StorageConflict,
@@ -38,6 +39,7 @@ import {
   IMPORT_LIMIT,
 } from "./imports.mjs";
 import { restorePublicCache, updateMarket } from "./market.mjs";
+import { retireBuiltInDemo } from "./access.mjs";
 import {
   field,
   select,
@@ -48,8 +50,8 @@ import {
 const $ = (s) => document.querySelector(s),
   today = () => F.localDate(),
   currentMonth = () => today().slice(0, 7);
-let state = F.demo(),
-  slot = "demo",
+let state = F.emptyState(),
+  slot = "locked",
   db = null,
   key = null,
   kdf = null,
@@ -76,7 +78,8 @@ let state = F.demo(),
   pendingLock = false,
   sealedDrafts = null,
   transitioning = false,
-  privacyMasked = false;
+  privacyMasked = false,
+  demoRetirement = { status: "none", raw: null };
 let dialogKind = "",
   dialogId = "",
   drafts = new Map(),
@@ -218,6 +221,7 @@ function toast(message) {
   toast.timer = setTimeout(() => $("#toast").classList.remove("show"), 6000);
 }
 function renderNotice() {
+  if (slot !== "personal") { renderAccess(); return; }
   if (privacyMasked) return;
   const messages = [];
   if (blocked)
@@ -256,8 +260,39 @@ function renderNotice() {
   $("#undo-notice").hidden = !undo;
   $("#update-notice").hidden = !waitingWorker;
 }
+function renderAccess() {
+  const locked = slot !== "personal" || privacyMasked;
+  document.body.classList.toggle("is-locked", locked);
+  $("#access-screen").hidden = !locked;
+  if (!locked) return;
+  document.title = "Acessar · Minhas finanças";
+  $("#main").replaceChildren();
+  $("#main").setAttribute("aria-busy", "false");
+  $("#profile").textContent = "•";
+  $("#mode-label").textContent = "Cofre bloqueado";
+  $("#breadcrumb").textContent = "Acesso";
+  $("#storage-notice").replaceChildren();
+  $("#storage-notice").hidden = true;
+  $("#undo-notice").hidden = true;
+  $("#access-title").textContent = personalHead ? "Entre no seu cofre." : "Comece pelo seu acesso.";
+  $("#access-caption").textContent = personalHead
+    ? "Use a senha deste dispositivo para acessar suas finanças."
+    : "Crie sua senha. Suas contas, investimentos e lançamentos começam vazios.";
+  $("#access-primary").textContent = personalHead ? "Entrar com minha senha" : "Criar meu acesso";
+  $("#access-primary").disabled = !db || memory || busy || transitioning || privacyMasked;
+  $("#access-status").textContent = memory
+    ? "O navegador não liberou o armazenamento. Seus dados foram preservados. Habilite o armazenamento e recarregue para entrar."
+    : demoRetirement.status === "removed"
+      ? "Os exemplos de demonstração foram removidos. O cofre pessoal foi preservado."
+      : "Seu cofre é criptografado neste navegador. A senha não é enviada ao servidor.";
+  $("#access-review").hidden = demoRetirement.status !== "review";
+  $("#access-update-notice").hidden = !waitingWorker;
+}
 function render() {
+  if (slot !== "personal") { renderAccess(); return; }
   if (!state || privacyMasked) return;
+  document.body.classList.remove("is-locked");
+  $("#access-screen").hidden = true;
   const previousFocus = rememberFocus();
   view = isRoute(view) ? view : "inicio";
   document.title = routes[view] + " · Minhas finanças";
@@ -288,6 +323,7 @@ function renderLedger() {
   restoreFocus(previousFocus, previousFocus.inMain);
 }
 function navigate(next) {
+  if (slot !== "personal" || !key) return;
   if (busy || processing || transitioning) {
     toast("Aguarde a operação terminar.");
     return;
@@ -303,6 +339,8 @@ function navigate(next) {
   window.scrollTo({ top: 0, behavior: "instant" });
 }
 function assertWritable() {
+  if (slot !== "personal" || !key || !db || memory)
+    throw new Error("Entre no seu cofre antes de alterar suas finanças.");
   if (transitioning || privacyMasked)
     throw new Error("Aguarde a troca de espaço terminar.");
   if (blocked)
@@ -530,26 +568,7 @@ function openDialog(kind, id = "", override = {}) {
     submit = "Salvar",
     wide = false;
   const row = (collection) => state[collection].find((x) => x.id === id);
-  if (kind === "mode") {
-    title = "Escolha seu espaço";
-    submit = "Continuar";
-    html =
-      help(
-        "A demonstração usa dados fictícios. Seu espaço pessoal começa vazio e pode ser protegido neste dispositivo, sem login no ChatGPT.",
-      ) +
-      select(
-        "Espaço",
-        "target",
-        [
-          ["demo", "Explorar demonstração"],
-          ["personal", "Usar meus dados pessoais"],
-        ],
-        slot,
-      ) +
-      help(
-        "O cofre é local: use backup para levar os dados para outro navegador.",
-      );
-  } else if (kind === "create") {
+  if (kind === "create") {
     title = "Criar meu cofre pessoal";
     submit = "Criar cofre vazio";
     html =
@@ -557,7 +576,7 @@ function openDialog(kind, id = "", override = {}) {
         "Como quer ser chamado?",
         "name",
         "text",
-        "Isaque",
+        "",
         'maxlength="40" required autocomplete="given-name"',
       ) +
       field(
@@ -592,7 +611,7 @@ function openDialog(kind, id = "", override = {}) {
         'minlength="12" maxlength="256" required autocomplete="current-password"',
       ) +
       help(
-        "Esta senha é local, separada do ChatGPT. O site e a demonstração continuam acessíveis sem login.",
+        "A senha abre somente este cofre, neste navegador. Ao sair, seus registros permanecem criptografados.",
       ) +
       `<input type="hidden" name="checkpoint" value="${recovering ? "true" : "false"}">` +
       '<button type="button" class="text-link" data-action="personal-raw-export">Exportar cofre para recuperação</button>' +
@@ -1229,20 +1248,16 @@ function valueMoney(v, signed = false) {
   }
   return n;
 }
-async function switchDemo() {
-  if (transitioning) return;
+async function closeSession() {
+  if (transitioning || slot !== "personal") return;
   transitioning = true;
-  const leavingPersonal = slot === "personal";
   const previousKey = key;
   if ($("#dialog").open) stashDialog();
-  const personalDrafts = leavingPersonal
-    ? [...drafts].filter(([name]) => name.startsWith("personal:"))
-    : [];
+  const personalDrafts = [...drafts].filter(([name]) => name.startsWith("personal:"));
   for (const [name] of personalDrafts) drafts.delete(name);
-  // Clear plaintext UI and session references synchronously, before encryption
-  // or database reads can suspend the transition.
-  slot = "demo";
-  state = F.demo();
+  // Remove plaintext UI/session references before awaiting encryption or I/O.
+  slot = "locked";
+  state = F.emptyState();
   key = null;
   kdf = null;
   undo = null;
@@ -1250,53 +1265,28 @@ async function switchDemo() {
   blocked = false;
   pendingLock = false;
   privacyMasked = false;
+  hidden = false;
+  $("#hide-values").setAttribute("aria-pressed", "false");
+  $("#hide-values").setAttribute("aria-label", "Ocultar valores");
+  $("#hide-values").textContent = "◉";
   clearSpaceControls();
-  render();
+  renderAccess();
   let draftWarning = false;
   try {
-    if (leavingPersonal) {
-      sealedDrafts = null;
-      if (personalDrafts.length && previousKey) {
-        try {
-          sealedDrafts = await seal(personalDrafts, previousKey, "drafts");
-        } catch {
-          draftWarning = true;
-        }
-      }
+    sealedDrafts = null;
+    if (personalDrafts.length && previousKey) {
+      try { sealedDrafts = await seal(personalDrafts, previousKey, "drafts"); }
+      catch { draftWarning = true; }
     }
-    if (db && !memory) {
-      const raw = await loadRaw(db, "demo");
-      try {
-        const loaded = await decodeRaw(raw);
-        if (loaded) state = loaded;
-        else {
-          try {
-            state = await saveSlot(db, "demo", null, state, -1);
-          } catch (error) {
-            if (!(error instanceof StorageConflict)) throw error;
-            state = await decodeRaw(await loadRaw(db, "demo"));
-          }
-        }
-      } catch {
-        blocked = true;
-        state.revision = safeRevision(raw.head?.revision);
-      }
-    }
+    personalHead = personalStatus(await loadRaw(db, "personal"));
   } catch {
-    // The personal vault is already locked even if demo storage is unavailable.
     memory = true;
   } finally {
-    try {
-      sessionStorage.setItem("mf-space", "demo");
-    } catch {
-      /* optional preference */
-    }
+    try { sessionStorage.removeItem("mf-space"); } catch { /* optional preference */ }
     transitioning = false;
-    render();
-    if (draftWarning)
-      toast(
-        "Cofre bloqueado. Os registros salvos foram preservados; não foi possível conservar o rascunho desta sessão.",
-      );
+    renderAccess();
+    $("#access-primary").focus({ preventScroll: true });
+    if (draftWarning) toast("Cofre bloqueado. Os registros foram preservados; o rascunho desta sessão não pôde ser conservado.");
   }
   return !draftWarning;
 }
@@ -1334,6 +1324,10 @@ function maskPersonalInterface() {
   if (slot !== "personal" || privacyMasked) return;
   if ($("#dialog").open) stashDialog();
   privacyMasked = true;
+  document.body.classList.add("is-locked");
+  $("#access-screen").hidden = false;
+  $("#access-primary").disabled = true;
+  document.title = "Cofre bloqueado · Minhas finanças";
   $("#main").replaceChildren();
   const message = document.createElement("p");
   message.className = "empty";
@@ -1355,9 +1349,8 @@ async function lockVault() {
     maskPersonalInterface();
     return;
   }
-  const draftsPreserved = await switchDemo();
-  if (draftsPreserved)
-    toast("Cofre bloqueado. A demonstração continua aberta.");
+  const draftsPreserved = await closeSession();
+  if (draftsPreserved) toast("Cofre bloqueado. Entre com sua senha para continuar.");
 }
 async function unlock(password, checkpoint = false) {
   const raw = await loadRaw(db, "personal");
@@ -1436,25 +1429,9 @@ async function submitForm(event) {
   $("#dialog-error").hidden = true;
   try {
     validateFormData(kind, d, state, { id, today: today(), month });
-    if (kind === "mode") {
-      closeDialog();
-      if (d.target === "demo") {
-        await switchDemo();
-        return;
-      }
-      if (slot === "personal") {
-        toast("Seu cofre já está aberto.");
-        return;
-      }
-      if (!db || memory)
-        throw new Error(
-          "O cofre pessoal precisa do armazenamento do navegador. Use a demonstração e exporte seus testes.",
-        );
-      personalHead = personalStatus(await loadRaw(db, "personal"));
-      openDialog(personalHead ? "unlock" : "create");
-      return;
-    }
     if (kind === "create") {
+      if (!db || memory) throw new Error("O armazenamento precisa estar disponível para criar seu acesso.");
+      if (personalStatus(await loadRaw(db, "personal"))) throw new StorageConflict();
       if (d.password !== d.confirmation)
         throw new Error("As senhas não coincidem.");
       setBusy(true);
@@ -1471,7 +1448,7 @@ async function submitForm(event) {
       slot = "personal";
       key = newKey;
       kdf = newK;
-      personalHead = { kdf };
+      personalHead = personalStatus(await loadRaw(db, "personal"));
       undo = null;
       external = false;
       blocked = false;
@@ -2081,6 +2058,11 @@ async function action(name, id, element) {
     toast("Aguarde a operação terminar.");
     return;
   }
+  const publicActions = ["personal", "mode", "personal-raw-export", "unlock-checkpoint", "retired-demo-export", "retired-demo-discard", "check-update", "apply-update", "install"];
+  if (slot !== "personal" && !publicActions.includes(name)) {
+    toast("Entre no seu cofre para continuar.");
+    return;
+  }
   processing = true;
   setBusy(true);
   try {
@@ -2105,7 +2087,6 @@ async function action(name, id, element) {
         "snapshot",
         "watch",
         "name",
-        "mode",
         "change-password",
         "simulate",
         "import",
@@ -2114,8 +2095,25 @@ async function action(name, id, element) {
       openDialog(name, id);
       return;
     }
-    if (name === "personal") {
-      openDialog("mode", "", { target: "personal" });
+    if (name === "personal" || name === "mode") {
+      if (slot === "personal") { toast("Seu cofre já está aberto."); return; }
+      if (!db || memory) throw new Error("Habilite o armazenamento deste navegador para entrar.");
+      personalHead = personalStatus(await loadRaw(db, "personal"));
+      openDialog(personalHead ? "unlock" : "create");
+      return;
+    }
+    if (name === "retired-demo-export") {
+      const raw = await loadRaw(db, "demo");
+      download(JSON.stringify({ format: "minhas-financas-raw-recovery", version: 1, slot: "demo", raw }), "application/json", "minhas-financas-testes-antigos-recuperacao.json");
+      toast("Cópia do antigo espaço de testes solicitada. Confira e guarde o arquivo.");
+      return;
+    }
+    if (name === "retired-demo-discard") {
+      if (!demoRetirement.raw) return;
+      if (!confirm("Remover o antigo espaço de testes? Guarde uma cópia primeiro se houver registros seus. O cofre pessoal não será alterado.")) return;
+      await removeDemoSlot(db, demoRetirement.raw);
+      demoRetirement = { status: "removed", raw: null };
+      renderNotice();
       return;
     }
     if (name === "unlock-checkpoint") {
@@ -2366,17 +2364,6 @@ async function action(name, id, element) {
       undo = null;
       render();
       toast("Dados recarregados.");
-      return;
-    }
-    if (name === "reset-demo") {
-      if (!confirm("Reiniciar somente os dados fictícios da demonstração?"))
-        return;
-      await commit(
-        { ...F.demo(), revision: state.revision },
-        "Demonstração reiniciada.",
-      );
-      undo = null;
-      render();
       return;
     }
     if (name === "migrate") {
@@ -2700,25 +2687,18 @@ async function bootstrap() {
     db = await openDatabase();
     legacy = await readValue(db, "state");
     personalHead = personalStatus(await loadRaw(db, "personal"));
-    const raw = await loadRaw(db, "demo");
-    try {
-      const loaded = await decodeRaw(raw);
-      if (loaded) state = loaded;
-      else {
-        state = await saveSlot(db, "demo", null, F.demo(), -1);
-      }
-    } catch (e) {
-      if (e instanceof StorageConflict)
-        state = await decodeRaw(await loadRaw(db, "demo"));
-      else {
-        blocked = true;
-        state.revision = safeRevision(raw.head?.revision);
-      }
+    demoRetirement = await retireBuiltInDemo(db);
+    if (demoRetirement.status === "removed") {
+      try {
+        localStorage.removeItem("mf-demo-backup");
+        localStorage.removeItem("mf-demo-verified");
+        if (sessionStorage.getItem("mf-space") === "demo") sessionStorage.removeItem("mf-space");
+      } catch { /* optional preferences */ }
     }
     stats = await storageInfo().catch(() => null);
   } catch (e) {
     memory = true;
-    toast(e.message + " Os exemplos estão disponíveis nesta sessão.");
+    toast("O armazenamento não está disponível. Seus dados foram preservados.");
   }
   restorePublicCache();
   render();

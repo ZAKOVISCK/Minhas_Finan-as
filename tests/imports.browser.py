@@ -5,6 +5,7 @@ IndexedDB demo data. No remote mutations or personal financial data are used.
 Run: python tests/imports.browser.py [base_url] [evidence_json]
 """
 import json
+from browser_session import seed_fixture, reload_fixture, TEST_PASSWORD
 import os
 import sys
 from pathlib import Path
@@ -32,7 +33,7 @@ def read_state(page):
     return page.evaluate('''async () => {
       const S = await import('/storage.mjs');
       const db = await S.openDatabase();
-      try { return await S.decodeRaw(await S.loadRaw(db, 'demo')); }
+      try { return await (async()=>{const qaRaw=await S.loadRaw(db,'personal'),qaCrypto=await import('/crypto.mjs');return S.decodeRaw(qaRaw,await qaCrypto.deriveKey("senha sintética exclusiva das fixtures QA 2026",qaRaw.head.kdf));})(); }
       finally { db.close(); }
     }''')
 
@@ -76,20 +77,22 @@ with sync_playwright() as pw:
     page.on('pageerror', lambda error: results['javascript_errors'].append(str(error)))
     try:
         page.goto(BASE, wait_until='networkidle')
+        seed_fixture(page)
         expect(page.locator('main')).to_have_attribute('aria-busy', 'false')
         page.evaluate('''async () => {
           const F = await import('/finance.mjs');
           const S = await import('/storage.mjs');
           const db = await S.openDatabase();
           try {
-            const before = await S.decodeRaw(await S.loadRaw(db, 'demo'));
+            const before = await (async()=>{const qaRaw=await S.loadRaw(db,'personal'),qaCrypto=await import('/crypto.mjs');return S.decodeRaw(qaRaw,await qaCrypto.deriveKey("senha sintética exclusiva das fixtures QA 2026",qaRaw.head.kdf));})();
             const fixture = F.emptyState('Importações de teste', '2025-01-01');
             fixture.accounts.push({id:'bank',name:'Conta de teste',kind:'bank',opening:100000,openingDate:'2025-01-01',archived:false});
             fixture.entries.push({id:'bill',description:'Energia mensal',type:'expense',category:'Serviços',amount:10000,dueDate:'2025-01-05',competence:'2025-01',accountId:'bank',cardId:null});
-            await S.saveSlot(db, 'demo', before, F.validateState(fixture), before.revision, {force:true});
+            const qaRaw=await S.loadRaw(db,'personal'),qaC=await import('/crypto.mjs'),qaKey=await qaC.deriveKey("senha sintética exclusiva das fixtures QA 2026",qaRaw.head.kdf);
+            await S.saveSlot(db, 'personal', before, F.validateState(fixture), before.revision, {force:true,key:qaKey,kdf:qaRaw.head.kdf});
           } finally { db.close(); }
         }''')
-        page.reload(wait_until='networkidle')
+        reload_fixture(page,wait_until='networkidle')
         expect(page.locator('main')).to_have_attribute('aria-busy', 'false')
         page.evaluate("location.hash = 'lancamentos'")
         expect(page.locator('#breadcrumb')).to_have_text('Lançamentos')
