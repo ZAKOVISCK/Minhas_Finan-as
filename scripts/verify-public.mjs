@@ -16,7 +16,7 @@ await check('version',async()=>{
  const r=await fetchURL('/version.json');assert.equal(r.status,200);security(r);const version=await r.json();assert.equal(version.version,manifest.version);assert.match(version.commit,/^[a-f0-9]{40}$/);if(commit)assert.equal(version.commit,commit);report.source=version;assert.equal(r.headers.get('x-app-source-commit'),version.commit);
 });
 for(const[file,mime]of Object.entries(PUBLIC_FILES))await check(file,async()=>{
- const r=await fetchURL('/'+file);assert.equal(r.status,200);security(r);assert.equal(r.headers.get('content-type').split(';')[0],mime.split(';')[0]);assert.equal(r.headers.get('x-app-version'),manifest.version);if(report.source)assert.equal(r.headers.get('x-app-source-commit'),report.source.commit);
+ const r=await fetchURL('/'+file);assert.equal(r.status,200);security(r);assert.match(r.headers.get('cache-control')||'',/no-transform/);assert.equal(r.headers.get('content-type').split(';')[0],mime.split(';')[0]);assert.equal(r.headers.get('x-app-version'),manifest.version);if(report.source)assert.equal(r.headers.get('x-app-source-commit'),report.source.commit);
  const body=new Uint8Array(await r.arrayBuffer()),sha=createHash('sha256').update(body).digest('hex');assert.equal(sha,manifest.publicFilesSha256[file]);
  if(file==='sw.js'){assert.equal(r.headers.get('service-worker-allowed'),'/');assert.match(r.headers.get('cache-control'),/no-cache/);assert.ok(new TextDecoder().decode(body).includes('mf-core-'+manifest.version));}
  const head=await fetchURL('/'+file,{method:'HEAD'});assert.equal(head.status,200);security(head);assert.equal((await head.arrayBuffer()).byteLength,0);

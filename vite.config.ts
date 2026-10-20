@@ -1,4 +1,5 @@
 import vinext from "vinext";
+import { publicAssetsPlugin } from "./build/public-assets-plugin.mjs";
 import { releaseInfoPlugin } from "./build/release-info-plugin.mjs";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
@@ -54,6 +55,7 @@ export default defineConfig(async ({ command }) => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    publicDir: false as const,
     server: {
       ...(managedLinux
         ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] }
@@ -66,6 +68,7 @@ export default defineConfig(async ({ command }) => {
       vinext(),
       sites({ mockAuth: !managedLinux }),
       releaseInfoPlugin(),
+      publicAssetsPlugin(),
       connectorPreview(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },

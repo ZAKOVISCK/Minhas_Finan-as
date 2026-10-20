@@ -20,3 +20,8 @@ Base conferida antes de editar: GitHub `main@0c22b907b2f89c79ceb81d9e414a9cea4b4
 O teste offline WebKit pode ser bloqueado por erro interno do driver. Nesse caso, um service worker mínimo independente é usado no diagnóstico; o cenário do app fica **bloqueado**, com `passed=false`, e não entra na contagem de aprovados. Engines que não iniciam também não contam como aprovadas. Os relatórios reais e logs ficam nos artefatos da CI correspondente ao commit, sem afirmação antecipada de sucesso.
 
 Todos os testes usam perfis temporários e dados fictícios. Cofres reais não são abertos, reinicializados ou enviados ao servidor. Safari/iOS físico, teclado virtual real e leitor de tela humano não são equivalentes às engines Linux e exigem verificação separada.
+
+
+## Verificação da hospedagem e correção 1.1.2
+
+O teste público da primeira publicação 1.1.1 comprovou que Sites ainda servia assets diretamente sem os novos cabeçalhos. A versão 1.1.2 elimina esse caminho: o conjunto fechado entra no bundle do Worker e não é copiado para o diretório estático. A recusa de arquivos privados continua, assim como a identidade dos bytes, MIME e ETag. O SW ganha cache novo para que a política também seja atualizada nos clientes que instalaram a 1.1.1.

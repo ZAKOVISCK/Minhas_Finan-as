@@ -28,7 +28,7 @@ export function createAppServer({
       response.setHeader('Content-Security-Policy',SECURITY_HEADERS['Content-Security-Policy'].replace('; upgrade-insecure-requests',''));
     response.setHeader("Referrer-Policy", "no-referrer");
     response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
-    response.setHeader("Cache-Control", "no-cache");
+    response.setHeader("Cache-Control", "no-cache, no-transform");
     const send = (status, text, type = "text/plain; charset=utf-8") => {
       response.writeHead(status, { "Content-Type": type });
       response.end(request.method === "HEAD" ? undefined : text);

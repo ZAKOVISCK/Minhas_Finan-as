@@ -1,4 +1,4 @@
-# Publicação da versão 1.1.1 no projeto original
+# Publicação da versão 1.1.2 no projeto original
 
 Projeto Sites `appgprj_6ad60d588e3c819189574322fd3a67a9`; origem HTTPS preservada:
 https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site . Audiência pública, sem login de plataforma. Não adicionar D1/R2 nem transferir cofres ao servidor.
@@ -12,7 +12,9 @@ https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site . Audiência p�
 
 ## Assets, CSP e APIs
 
-`vite.config.ts` configura `assets.binding=ASSETS` e `assets.run_worker_first=true`. O Worker valida a lista fechada de arquivos e os serve via `env.ASSETS.fetch`, acrescentando os cabeçalhos em todas as respostas, incluindo HEAD/304: `nosniff`, CORP `same-origin`, CSP sem inline/eval, cache revalidado e escopo `/` para o SW. `_headers` não é usado como garantia de segurança.
+A publicação 1.1.1 revelou que Sites entregava os arquivos enviados diretamente antes de executar o Worker, mesmo com `run_worker_first=true`. Por isso, a versão 1.1.2 usa `publicDir:false` e o plugin `build/public-assets-plugin.mjs`: o pequeno conjunto fechado de assets entra no bundle do Worker, em bytes base64, sem cópias concorrentes em `dist/client/`.
+
+O Worker serve esse conjunto pelo adaptador `lib/embedded-assets.mjs`, aplica a lista fechada e os cabeçalhos em todas as respostas, incluindo HEAD/304: `nosniff`, CORP `same-origin`, CSP sem inline/eval, cache revalidado e escopo `/` para o SW. MIME, bytes originais e ETag SHA-256 são preservados. `_headers` e metadados de roteamento da plataforma não são usados como garantia de segurança.
 
 O build deve preservar essa configuração no `dist/server/wrangler.json`. Execute `node scripts/check-worker-build.mjs` e confira os cabeçalhos novamente no endereço público após publicar. Apenas encontrar o código no arquivo não conclui essa verificação.
 
@@ -38,7 +40,7 @@ Execute os checks/build pendentes pelo fluxo oficial, sincronize o commit exato 
 
 ## Conferência pública obrigatória
 
-- `/version.json`, HTML/footer e SW identificam 1.1.1 e o commit esperado.
+- `/version.json`, HTML/footer e SW identificam 1.1.2 e o commit esperado.
 - Todos os 16 arquivos públicos têm os hashes de `UPSTREAM.json`, MIME correto, `nosniff` e CORP `same-origin`; SW com revalidação, escopo raiz e cache de versão.
 - As quatro APIs devolvem seus dados reais, fontes e timestamps; falhas externas são identificadas sem inventar valores.
 - Parâmetros inválidos 400; origem externa 403; métodos de escrita 405; código privado 404.
@@ -49,7 +51,7 @@ Execute os checks/build pendentes pelo fluxo oficial, sincronize o commit exato 
 
 Não limpe IndexedDB, localStorage ou dados do Site para atualizar. A origem, schema e envelope são preservados. A cópia anterior é mantida nas gravações comuns e após recusas inválidas. Na troca completa de senha, o checkpoint cifrado pela chave antiga é descartado deliberadamente; a próxima gravação recria um checkpoint cifrado pela chave nova. Backups anteriores continuam legíveis com a senha original.
 
-Mantenha 1.1.1 ou posterior para conservar estas correções. Reverter o servidor não reverte dados já salvos no navegador. Após categorias personalizadas, não usar frontend 1.0.x. A origem HTTP/hostname/porta não pode ser mudada sem exportação/restauração explícita.
+Mantenha 1.1.2 ou posterior para conservar estas correções. Reverter o servidor não reverte dados já salvos no navegador. Após categorias personalizadas, não usar frontend 1.0.x. A origem HTTP/hostname/porta não pode ser mudada sem exportação/restauração explícita.
 
 ## Alternativa Node
 

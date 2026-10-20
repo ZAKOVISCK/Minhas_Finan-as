@@ -1,4 +1,4 @@
-const VERSION = 'mf-core-1.1.1';
+const VERSION = 'mf-core-1.1.2';
 const META_CACHE = 'mf-worker-meta';
 const META_ROOT = new URL('/__mf_worker__/', self.location.origin).href;
 const FILES = [

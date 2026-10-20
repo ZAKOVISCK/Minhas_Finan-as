@@ -9,17 +9,17 @@ test('Worker: todos os assets, HEAD e 304 recebem nosniff, CORP, CSP e MIME corr
  const calls=[];
  const binding={async fetch(request){calls.push(request.url);return new Response(request.headers.has('If-None-Match')?null:'conteúdo sintético',{status:request.headers.has('If-None-Match')?304:200,headers:{'Content-Type':'application/octet-stream',ETag:'"fixture"'}});}};
  for(const[file,mime]of Object.entries(PUBLIC_FILES)){
-  if(file==='index.html')continue;
   for(const options of [{},{method:'HEAD'},{headers:{'If-None-Match':'"fixture"'}}]){
    const request=new Request('https://financas.test/'+file,options),response=await servePublicAsset(request,binding,commit);
    assert.equal(response.headers.get('X-Content-Type-Options'),'nosniff',file);assert.equal(response.headers.get('Cross-Origin-Resource-Policy'),'same-origin',file);
-   assert.equal(response.headers.get('Content-Type'),mime,file);assert.equal(response.headers.get('X-App-Source-Commit'),commit);assert.equal(response.headers.get('Cache-Control'),'no-cache');
+   assert.equal(response.headers.get('Content-Type'),mime,file);assert.equal(response.headers.get('X-App-Source-Commit'),commit);assert.equal(response.headers.get('Cache-Control'),'no-cache, no-transform');
    assert.doesNotMatch(response.headers.get('Content-Security-Policy'),/unsafe-inline|unsafe-eval/);
    if(file==='sw.js')assert.equal(response.headers.get('Service-Worker-Allowed'),'/');
    if(request.method==='HEAD'||options.headers)assert.equal(await response.text(),'');
   }
  }
- assert.equal(calls.length,(Object.keys(PUBLIC_FILES).length-1)*3);
+ assert.equal(calls.length,Object.keys(PUBLIC_FILES).length*3);
+ const root=await servePublicAsset(new Request('https://financas.test/'),binding,commit);assert.equal(root.headers.get('Content-Type'),PUBLIC_FILES['index.html']);assert.match(root.headers.get('Cache-Control'),/no-transform/);
 });
 test('Worker: arquivos privados e métodos de escrita não acessam o binding de assets',async()=>{
  let called=0;const assets={async fetch(){called++;return new Response('erro');}};
@@ -35,5 +35,5 @@ test('Node: o servidor reproduzível entrega todos os arquivos com cabeçalhos e
  }
  const local=await fetch(base+'/');assert.doesNotMatch(local.headers.get('content-security-policy'),/upgrade-insecure-requests/);await local.arrayBuffer();
  const secure=await fetch(base+'/',{headers:{'X-Forwarded-Proto':'https'}});assert.match(secure.headers.get('content-security-policy'),/upgrade-insecure-requests/);await secure.arrayBuffer();
- const release=await(await fetch(base+'/version.json')).json();assert.equal(release.version,'1.1.1');assert.equal(release.repository,'https://github.com/ZAKOVISCK/Minhas_Finan-as');
+ const release=await(await fetch(base+'/version.json')).json();assert.equal(release.version,'1.1.2');assert.equal(release.repository,'https://github.com/ZAKOVISCK/Minhas_Finan-as');
 });

@@ -63,3 +63,5 @@ __pycache__/
 
 # Evidência visual local; não é parte do código publicado no GitHub.
 /docs/qa/minhas-financas-1.1.0-publicado.jpg
+
+!/build/public-assets-plugin.mjs

@@ -315,7 +315,7 @@ class Checks:
             page.evaluate("""async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}))}""")
             page.reload(wait_until='domcontentloaded')
             expect(page.locator('#main')).to_have_attribute('aria-busy','false')
-            assert page.locator('meta[name="application-version"]').get_attribute('content')=='1.1.1'
+            assert page.locator('meta[name="application-version"]').get_attribute('content')=='1.1.2'
             context.set_offline(True)
             page.reload(wait_until='domcontentloaded')
             expect(page.locator('#main')).to_have_attribute('aria-busy','false')

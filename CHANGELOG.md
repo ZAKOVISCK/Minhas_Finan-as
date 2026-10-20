@@ -1,3 +1,9 @@
+# Correção de hospedagem 1.1.2
+
+- Assets servidos em bytes pelo Worker, com `publicDir:false`, para garantir cabeçalhos mesmo quando Sites ignora o roteamento de arquivos enviados.
+- Preservados MIME, ETag, HEAD/304, CSP, escopo e atualização segura do SW. Cache `mf-core-1.1.2` para atualizar clientes da 1.1.1.
+- Mantidas integralmente as correções de histórico, KDF e migração da revisão 1.1.1.
+
 # Alterações
 
 ## 1.1.1
@@ -73,3 +79,5 @@ O backend de `/api/data` não foi disponibilizado. O servidor local retorna HTTP
 - Mantido backend original, adaptando o transporte para Cloudflare Workers e preservando CSP, destinos fixos e contrato JSON.
 - Corrigida a primeira gravação de registros legados sem digest, com testes contra o cofre real 1.0.1 usando somente fixtures sintéticas. Schema, envelope, criptografia, IDs, valores e origem preservados.
 - Adicionados testes da adaptação, migração de cofres e backup antigo, mais CI de migração e offline em navegadores.
+
+- HTML e assets compartilham o mesmo caminho de entrega, ETag e `Cache-Control: no-cache, no-transform`, preservando bytes, CSP e revalidação sem transformações intermediárias.

@@ -1,10 +1,10 @@
-# Minhas Finanças 1.1.1
+# Minhas Finanças 1.1.2
 
 Finanças pessoais locais, com cofre criptografado, demonstração separada, controle financeiro, carteira e fontes econômicas públicas. Sem assinatura, credenciais bancárias ou APIs pagas.
 
 Site original: https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site .
 
-Este repositório contém o **projeto completo da publicação Sites**, incluindo os assets reais, o servidor Worker, a alternativa Node, a configuração de build e todos os testes. A revisão 1.1.1 integra a correção de compatibilidade que a publicação 1.1.0 acrescentou ao GitHub original. O histórico anterior é preservado; `release/` é somente a referência integral de `main@0c22b907b2f89c79ceb81d9e414a9cea4b4697f2`, sem uso no runtime atual.
+Este repositório contém o **projeto completo da publicação Sites**, incluindo os assets reais, o servidor Worker, a alternativa Node, a configuração de build e todos os testes. A revisão 1.1.2 integra a correção de compatibilidade que a publicação 1.1.0 acrescentou ao GitHub original. O histórico anterior é preservado; `release/` é somente a referência integral de `main@0c22b907b2f89c79ceb81d9e414a9cea4b4697f2`, sem uso no runtime atual.
 
 ## Instalação e execução
 
@@ -35,7 +35,7 @@ Escuta padrão: `http://127.0.0.1:3000`. O runtime Node não precisa das depend�
 - `lib/shell.html`: HTML entregue nas rotas `/` e `/index.html`.
 - `lib/market-server.mjs`: consultas públicas com destinos fixos, cache, validação e limites.
 - `lib/market-http.mjs`: adaptação segura do transporte para o Worker.
-- `lib/static-http.mjs`: cabeçalhos de todos os assets, preservando MIME, ETag, HEAD e 304.
+- `lib/static-http.mjs` e `lib/embedded-assets.mjs`: assets empacotados no Worker, cabeçalhos uniformes, MIME, ETag, HEAD e 304.
 - `build/sites-worker.ts`, `vite.config.ts`, `.openai/hosting.json`: projeto original e build da hospedagem. A integração Sites é preservada.
 - `server.mjs`, `Dockerfile`, `compose.yaml`: execução Node reproduzível.
 - `tests/`: suítes nativas e de navegador sobre os arquivos efetivamente publicados, incluindo fixtures sintéticas da versão 1.0.1.
@@ -60,7 +60,7 @@ O mesmo domínio e o IndexedDB são mantidos. Schema 3, envelope 1, AES-GCM e KD
 
 Históricos de transferências, operações e proventos têm paginação independente e ações até o registro mais antigo. Os cálculos usam o conjunto completo, independentemente da página. A navegação de páginas não grava alterações financeiras.
 
-O cache `mf-core-1.1.1` instala todos os assets de forma atômica. **Atualizar aplicativo** ativa a versão aguardando; as outras abas preservam seus arquivos até recarregar. Não limpe os dados do site para atualizar.
+O cache `mf-core-1.1.2` instala todos os assets de forma atômica. **Atualizar aplicativo** ativa a versão aguardando; as outras abas preservam seus arquivos até recarregar. Não limpe os dados do site para atualizar.
 
 A rotina **Verify original public Site** (disparo manual ou criação de uma branch `codex/verify-public-*` depois da publicação) verifica novamente os mesmos cenários em produção, somente no domínio autorizado e com contextos novos e descartáveis; seus resultados não são somados aos da CI local. `node scripts/verify-public.mjs --commit <SHA>` confere bytes, cabeçalhos, APIs e controles de acesso.
 

@@ -41,7 +41,7 @@ jobs:
           trap 'docker logs minhas-financas-ci; docker rm --force minhas-financas-ci' EXIT
           for attempt in $(seq 1 20); do
             if curl --fail --silent http://127.0.0.1:3000/ --output /tmp/minhas-financas-index.html; then
-              grep --quiet 'application-version.*1.1.1' /tmp/minhas-financas-index.html
+              grep --quiet 'application-version.*1.1.2' /tmp/minhas-financas-index.html
               test "$(docker exec minhas-financas-ci id -u)" != 0
               exit 0
             fi
