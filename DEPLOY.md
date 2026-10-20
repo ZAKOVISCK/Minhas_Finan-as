@@ -40,8 +40,8 @@ Execute os checks/build pendentes pelo fluxo oficial, sincronize o commit exato 
 
 ## Conferência pública obrigatória
 
-- `/version.json`, HTML/footer e SW identificam 1.1.2 e o commit esperado.
-- Todos os 16 arquivos públicos têm os hashes de `UPSTREAM.json`, MIME correto, `nosniff` e CORP `same-origin`; SW com revalidação, escopo raiz e cache de versão.
+- `/version.json`, HTML/footer e SW identificam 1.2.0 e o commit esperado.
+- Todos os 17 arquivos públicos têm os hashes de `UPSTREAM.json`, MIME correto, `nosniff` e CORP `same-origin`; SW com revalidação, escopo raiz e cache de versão.
 - As quatro APIs devolvem seus dados reais, fontes e timestamps; falhas externas são identificadas sem inventar valores.
 - Parâmetros inválidos 400; origem externa 403; métodos de escrita 405; código privado 404.
 - Aba antiga recebe a atualização explícita; dados persistem sem limpeza do armazenamento.

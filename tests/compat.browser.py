@@ -182,6 +182,7 @@ class Checks:
             self.page.set_viewport_size({'width':width,'height':height})
             assert self.page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
         assert self.page.locator('#access-screen img').evaluate_all("els=>els.every(el=>el.complete&&el.naturalWidth>0)")
+        assert self.page.evaluate("""async()=>{for(const size of [192,512]){const image=new Image();image.src="/icon-"+size+".png";await image.decode();if(image.naturalWidth!==size||image.naturalHeight!==size)return false;}return true;}""")
         self.page.screenshot(path=str(self.args.output/f'{self.engine}-access.png'),full_page=True)
         self.choose_personal()
         self.fill("name",PRIVATE_NAME)

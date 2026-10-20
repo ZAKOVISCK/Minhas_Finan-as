@@ -1,6 +1,6 @@
 # Minhas Finanças 1.2.0
 
-Finanças pessoais locais, com cofre criptografado, demonstração separada, controle financeiro, carteira e fontes econômicas públicas. Sem assinatura, credenciais bancárias ou APIs pagas.
+Finanças pessoais locais, com acesso por senha local, cofre criptografado, controle financeiro, carteira e fontes econômicas públicas. Sem assinatura, credenciais bancárias ou APIs pagas.
 
 Site original: https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site .
 
