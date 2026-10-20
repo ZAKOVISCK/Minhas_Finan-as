@@ -246,7 +246,7 @@ export function previousRaw(raw) {
     journal: null,
   };
 }
-export function diffRecords(before, next, slot) {
+export function diffRecords(before, next, slot, rewriteAll = false) {
   const previous = new Map();
   if (before)
     for (const c of COLLECTIONS)
@@ -255,7 +255,7 @@ export function diffRecords(before, next, slot) {
   for (const c of COLLECTIONS)
     for (const x of next[c]) {
       const rk = recordKey(c, x.id);
-      if (JSON.stringify(previous.get(rk)) !== JSON.stringify(x))
+      if (rewriteAll || JSON.stringify(previous.get(rk)) !== JSON.stringify(x))
         changes.push({
           key: slot + ":" + rk,
           slot,
@@ -307,10 +307,27 @@ export async function saveSlot(
     throw new Error(
       "Migre os dados antigos para o cofre pessoal antes de removê-los.",
     );
+  // 1.0.1 não gravava defaults opcionais introduzidos na 1.1 (por exemplo,
+  // payments.importKey). Na primeira gravação com digest, regrave os registros
+  // já normalizados. Comparar apenas o estado normalizado deixaria os payloads
+  // antigos no banco e produziria um digest diferente na próxima abertura.
+  // A revisão volta a ser verificada atomicamente na transação de escrita.
+  let upgradeLegacyRecords = false;
+  if (!force && expectedRevision >= 0) {
+    const existing = await readValue(db, "head:" + slot);
+    if (existing && existing.revision === expectedRevision) {
+      checkHead(existing, slot);
+      const existingRoot = encrypted
+        ? await unseal(existing.payload, key, "root")
+        : existing.payload;
+      upgradeLegacyRecords = existingRoot.stateDigest === undefined;
+    }
+  }
   const changes = diffRecords(
     force || expectedRevision === -1 ? null : before,
     next,
     slot,
+    upgradeLegacyRecords,
   );
   for (let i = 0; i < changes.length; i += 100)
     await Promise.all(

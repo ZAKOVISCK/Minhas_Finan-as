@@ -216,6 +216,82 @@ class Checks:
                 "encryptedBackupDownloadedAndRead": True, "savedRecordsContainNoPlaintextMarkers": True,
                 "lockRemovesPrivateUI": True, "wrongPasswordPreservesExactRaw": True, "unlockRestoresRecord": True}
 
+    def legacy_vault_upgrade(self):
+        # Synthetic v1.0.1 payloads: no catalog, no digest, payments without importKey.
+        before = self.page.evaluate("""async password => {
+          const F=await import('/finance.mjs'),C=await import('/crypto.mjs'),S=await import('/storage.mjs');
+          const state=F.demo(),kdf=C.newKdf(),key=await C.deriveKey(password,kdf);
+          delete state.categories;
+          for(const payment of state.payments)delete payment.importKey;
+          const root={...state,revision:0,recordKeys:[]},records=[];
+          for(const collection of F.COLLECTIONS){
+            for(const item of state[collection]){
+              const rk=collection+':'+item.id;root.recordKeys.push(rk);
+              records.push({key:'personal:'+rk,slot:'personal',collection,id:item.id,payload:await C.seal(item,key,rk)});
+            }
+            delete root[collection];
+          }
+          const head={version:3,revision:0,encrypted:true,kdf,operationId:'legacy-synthetic',payload:await C.seal(root,key,'root')};
+          const db=await S.openDatabase();try{
+            await new Promise((resolve,reject)=>{const tx=db.transaction(['data','records'],'readwrite');tx.objectStore('data').put(head,'head:personal');for(const r of records)tx.objectStore('records').put(r);tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error)});
+          }finally{db.close()}
+          return {ids:state.entries.map(x=>x.id),opening:state.accounts.map(x=>x.opening),amounts:state.entries.map(x=>x.amount)};
+        }""", PASSWORD)
+        self.choose_personal()
+        expect(self.page.locator('#dialog-title')).to_have_text('Abrir cofre pessoal')
+        self.fill('password',PASSWORD)
+        self.save()
+        self.navigate('configuracoes')
+        self.page.locator('[data-action="name"]').click()
+        self.fill('name','Cofre sintético migrado')
+        self.save()
+        self.page.reload(wait_until='domcontentloaded')
+        expect(self.page.locator('#main')).to_have_attribute('aria-busy','false')
+        self.choose_personal()
+        self.fill('password',PASSWORD)
+        self.save()
+        after=self.page.evaluate("""async password=>{
+          const S=await import('/storage.mjs'),C=await import('/crypto.mjs'),db=await S.openDatabase();
+          try{const raw=await S.loadRaw(db,'personal'),key=await C.deriveKey(password,raw.head.kdf);return await S.decodeRaw(raw,key)}finally{db.close()}
+        }""",PASSWORD)
+        assert after['name']=='Cofre sintético migrado'
+        assert [x['id'] for x in after['entries']]==before['ids']
+        assert [x['amount'] for x in after['entries']]==before['amounts']
+        assert [x['opening'] for x in after['accounts']]==before['opening']
+        assert after['categories']
+        return {'legacyVaultOpened':True,'firstWriteAndReloadPassed':True,'financialIDsAndValuesPreserved':True}
+
+    def installed_offline_core(self):
+        context=self.browser.new_context(locale='pt-BR',timezone_id='America/Sao_Paulo',service_workers='allow',viewport={'width':390,'height':844})
+        page=context.new_page();errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
+        try:
+            page.goto(self.args.base_url+'/',wait_until='domcontentloaded')
+            expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            page.evaluate("""async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}))}""")
+            page.reload(wait_until='domcontentloaded')
+            expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            assert page.locator('meta[name="application-version"]').get_attribute('content')=='1.1.0'
+            context.set_offline(True)
+            page.reload(wait_until='domcontentloaded')
+            expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            for route,label in ROUTES.items():
+                page.evaluate('(route)=>location.hash=route',route)
+                expect(page.locator('#breadcrumb')).to_have_text(label)
+            page.evaluate("location.hash='lancamentos'")
+            page.locator('.page-heading [data-action="entry"]').click()
+            page.locator('input[name="description"]').fill('Registro sintético offline')
+            page.locator('input[name="amount"]').fill('12,34')
+            page.locator('#dialog-submit').click()
+            expect(page.locator('#dialog')).not_to_be_visible()
+            page.reload(wait_until='domcontentloaded')
+            expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            expect(page.locator('#ledger-results')).to_contain_text('Registro sintético offline')
+            assert not errors,errors
+            context.set_offline(False)
+            return {'serviceWorkerInstalled':True,'offlineReloadAndEightRoutesPassed':True,'offlineRecordPersisted':True,'viewport':{'width':390,'height':844}}
+        finally:
+            context.close()
+
     def responsive_and_accessible_names(self):
         layouts = []
         for width, height in [(320, 568), (390, 844), (844, 390), (768, 1024)]:
@@ -285,7 +361,7 @@ def main():
                 continue
             record["browserVersion"] = browser.version
             try:
-                for scenario in ("demo_form_and_focus", "vault_and_encrypted_backup", "responsive_and_accessible_names"):
+                for scenario in ("demo_form_and_focus", "vault_and_encrypted_backup", "legacy_vault_upgrade", "installed_offline_core", "responsive_and_accessible_names"):
                     checks = None
                     outcome = {"name": scenario, "passed": False}
                     try:
