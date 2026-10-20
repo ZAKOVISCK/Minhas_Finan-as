@@ -22,6 +22,10 @@ export function createAppServer({
   return createServer(async (request, response) => {
     for(const [name,value]of Object.entries(SECURITY_HEADERS))response.setHeader(name,value);
     if(sourceCommit)response.setHeader("X-App-Source-Commit",sourceCommit);
+    // O servidor local é HTTP. Forçar upgrade aqui impede módulos no WebKit;
+    // a produção HTTPS (ou proxy HTTPS) mantém a política completa.
+    if(!request.socket.encrypted && request.headers['x-forwarded-proto']!=='https')
+      response.setHeader('Content-Security-Policy',SECURITY_HEADERS['Content-Security-Policy'].replace('; upgrade-insecure-requests',''));
     response.setHeader("Referrer-Policy", "no-referrer");
     response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
     response.setHeader("Cache-Control", "no-cache");

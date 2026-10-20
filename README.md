@@ -62,6 +62,8 @@ Históricos de transferências, operações e proventos têm paginação indepen
 
 O cache `mf-core-1.1.1` instala todos os assets de forma atômica. **Atualizar aplicativo** ativa a versão aguardando; as outras abas preservam seus arquivos até recarregar. Não limpe os dados do site para atualizar.
 
+A rotina **Verify original public Site** (disparo manual ou criação de uma branch `codex/verify-public-*` depois da publicação) verifica novamente os mesmos cenários em produção, somente no domínio autorizado e com contextos novos e descartáveis; seus resultados não são somados aos da CI local. `node scripts/verify-public.mjs --commit <SHA>` confere bytes, cabeçalhos, APIs e controles de acesso.
+
 `/version.json` e `X-App-Source-Commit` identificam o commit GitHub usado no build publicado. O commit interno Sites e o commit GitHub podem ter pais diferentes, mas devem ter a mesma árvore de arquivos. O procedimento está em [DEPLOY.md](DEPLOY.md); as correções e limites em [AUDITORIA.md](AUDITORIA.md).
 
 BCB/IBGE, notícias IBGE, comunicados Fed e duas amostras brapi dependem de conexão e disponibilidade externa. Não há promessa de bolsa completa ou cotação em tempo real. Cofres, senhas e registros financeiros não são enviados às APIs. Backups externos continuam necessários.

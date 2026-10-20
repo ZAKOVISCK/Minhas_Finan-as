@@ -33,5 +33,7 @@ test('Node: o servidor reproduzível entrega todos os arquivos com cabeçalhos e
   const r=await fetch(base+'/'+file);assert.equal(r.status,200,file);assert.equal(r.headers.get('Content-Type'),mime,file);assert.equal(r.headers.get('X-Content-Type-Options'),'nosniff');assert.equal(r.headers.get('Cross-Origin-Resource-Policy'),'same-origin');
   const etag=r.headers.get('etag');await r.arrayBuffer();const cached=await fetch(base+'/'+file,{headers:{'If-None-Match':etag}});assert.equal(cached.status,304);assert.equal(cached.headers.get('X-Content-Type-Options'),'nosniff');assert.equal(cached.headers.get('Cross-Origin-Resource-Policy'),'same-origin');
  }
+ const local=await fetch(base+'/');assert.doesNotMatch(local.headers.get('content-security-policy'),/upgrade-insecure-requests/);await local.arrayBuffer();
+ const secure=await fetch(base+'/',{headers:{'X-Forwarded-Proto':'https'}});assert.match(secure.headers.get('content-security-policy'),/upgrade-insecure-requests/);await secure.arrayBuffer();
  const release=await(await fetch(base+'/version.json')).json();assert.equal(release.version,'1.1.1');assert.equal(release.repository,'https://github.com/ZAKOVISCK/Minhas_Finan-as');
 });

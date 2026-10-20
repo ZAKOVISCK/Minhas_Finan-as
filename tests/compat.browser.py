@@ -51,6 +51,7 @@ def arguments():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--browser", choices=["chromium", "firefox", "webkit", "all"], default="chromium")
     parser.add_argument("--base-url", default="http://127.0.0.1:3000")
+    parser.add_argument("--allow-public-test-origin",action="store_true",help="Allow only the explicitly authorized original Site; still uses disposable contexts.")
     parser.add_argument("--executable", help="Browser binary; only valid with a single --browser.")
     parser.add_argument("--headed", action="store_true", help="Use a graphical display, such as a local Xvfb display in CI.")
     parser.add_argument("--output", type=Path, default=Path("/tmp/minhas-financas-compat"))
@@ -58,9 +59,10 @@ def arguments():
     args = parser.parse_args()
     args.base_url = args.base_url.rstrip("/")
     origin = urlparse(args.base_url)
-    if (origin.scheme not in ("http", "https") or origin.hostname not in ("localhost", "127.0.0.1", "::1")
-            or origin.username or origin.password or origin.path or origin.query or origin.fragment):
-        parser.error("Use a local origin only, without credentials, path, query or fragment.")
+    local=(origin.scheme in ('http','https') and origin.hostname in ('localhost','127.0.0.1','::1'))
+    public=(args.allow_public_test_origin and args.base_url=='https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site')
+    if not (local or public) or origin.username or origin.password or origin.path or origin.query or origin.fragment:
+        parser.error("Use a local origin, or explicitly allow the exact original public Site.")
     if args.executable and args.browser == "all":
         parser.error("--executable requires one browser engine.")
     if args.timeout_ms < 1000 or args.timeout_ms > 120000:
@@ -474,8 +476,6 @@ def main():
             record = {"engine": engine, "status": "passed", "scenarios": [], "headless": not args.headed}
             launch = {"headless": not args.headed, "timeout": args.timeout_ms}
             executable = args.executable or os.environ.get({"chromium": "CHROMIUM_PATH", "firefox": "FIREFOX_PATH", "webkit": "WEBKIT_PATH"}[engine])
-            if not executable and engine == "chromium":
-                executable = shutil.which("chromium")
             if executable:
                 launch["executable_path"] = executable
             record["executable"] = executable or "Playwright-managed engine"
