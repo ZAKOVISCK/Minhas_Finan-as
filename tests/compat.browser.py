@@ -43,6 +43,7 @@ ROUTES = {
     "configuracoes": "Configurações",
 }
 PASSWORD = "senha sintética de compatibilidade 2026"
+APP_VERSION = json.loads((Path(__file__).resolve().parents[1] / "package.json").read_text())["version"]
 PRIVATE_NAME = "Pessoa-Privada-Compat-7Q"
 PRIVATE_ACCOUNT = "Conta-Privada-Compat-7Q"
 PRIVATE_ENTRY = "Entrada-Privada-Compat-7Q"
@@ -345,11 +346,26 @@ class Checks:
         try:
             page.goto(self.args.base_url+'/',wait_until='domcontentloaded')
             expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            page.evaluate("""async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}))}""")
+            context.set_offline(True)
+            page.reload(wait_until='domcontentloaded')
+            expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            expect(page.locator('#dialog')).not_to_be_visible()
+            expect(page.locator('#mode-label')).to_have_text('Dados locais · sem senha')
+            page.evaluate("location.hash='configuracoes'")
+            page.locator('[data-action="name"]').click()
+            page.locator('input[name="name"]').fill('Espaço local offline QA')
+            page.locator('#dialog-submit').click()
+            expect(page.locator('#dialog')).not_to_be_visible()
+            page.reload(wait_until='domcontentloaded')
+            expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            expect(page.locator('#main')).to_contain_text('Espaço local offline QA')
+            context.set_offline(False)
             seed_fixture(page,password=PASSWORD)
             page.evaluate("""async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}))}""")
             reload_fixture(page,PASSWORD)
             expect(page.locator('#main')).to_have_attribute('aria-busy','false')
-            assert page.locator('meta[name="application-version"]').get_attribute('content')=='1.2.0'
+            assert page.locator('meta[name="application-version"]').get_attribute('content')==APP_VERSION
             context.set_offline(True)
             reload_fixture(page,PASSWORD)
             expect(page.locator('#main')).to_have_attribute('aria-busy','false')
@@ -367,7 +383,7 @@ class Checks:
             expect(page.locator('#ledger-results')).to_contain_text('Registro sintético offline')
             assert not errors,errors
             context.set_offline(False)
-            return {'serviceWorkerInstalled':True,'offlineReloadAndEightRoutesPassed':True,'offlineRecordPersisted':True,'viewport':{'width':390,'height':844}}
+            return {'directOfflineOpeningWithoutPassword':True,'localOfflineEditPersisted':True,'serviceWorkerInstalled':True,'offlineReloadAndEightRoutesPassed':True,'offlineRecordPersisted':True,'viewport':{'width':390,'height':844}}
         finally:
             context.close()
 
