@@ -1,0 +1,71 @@
+name: Audit published 1.3.0 without paid services
+on:
+  push:
+    branches: [codex/auditoria-gratuita-1.3.0]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: audit-1.3.0-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  provenance:
+    if: (github.head_ref || github.ref_name) == 'codex/auditoria-gratuita-1.3.0'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Preserve all application and deployment files
+        run: |
+          git rev-parse HEAD
+          git rev-parse 'HEAD^{tree}'
+          git diff --name-only 500c67eefd499b5fe2abc68ffa3c8bbcbdf11843 HEAD > "$RUNNER_TEMP/audit-changes.txt"
+          python - <<'PYCODE'
+          import os
+          from pathlib import Path
+          changed = Path(os.environ['RUNNER_TEMP'], 'audit-changes.txt').read_text().splitlines()
+          allowed = ('tests/', 'release/tests/', '.github/workflows/', 'docs/')
+          unexpected = [path for path in changed if not path.startswith(allowed)]
+          assert not unexpected, unexpected
+          print('Published application unchanged; audit-only differences:', changed)
+          PYCODE
+  published-baseline:
+    if: (github.head_ref || github.ref_name) == 'codex/auditoria-gratuita-1.3.0'
+    name: Published 1.3.0 exact baseline (counts overlap)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 500c67eefd499b5fe2abc68ffa3c8bbcbdf11843
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+      - run: npm install --global pnpm@11.25.0
+      - name: Verify exact published revision and install locked dependencies
+        run: |
+          test "$(git rev-parse HEAD)" = 500c67eefd499b5fe2abc68ffa3c8bbcbdf11843
+          git rev-parse 'HEAD^{tree}'
+          node --version
+          pnpm --version
+          pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: node scripts/check-worker-build.mjs
+  public-readonly:
+    if: (github.head_ref || github.ref_name) == 'codex/auditoria-gratuita-1.3.0'
+    name: Published files and APIs (read only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 500c67eefd499b5fe2abc68ffa3c8bbcbdf11843
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+      - run: node scripts/verify-public.mjs --commit 500c67eefd499b5fe2abc68ffa3c8bbcbdf11843

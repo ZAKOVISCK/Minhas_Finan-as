@@ -58,6 +58,7 @@ def arguments():
     parser.add_argument("--headed", action="store_true", help="Use a graphical display, such as a local Xvfb display in CI.")
     parser.add_argument("--output", type=Path, default=Path("/tmp/minhas-financas-compat"))
     parser.add_argument("--timeout-ms", type=int, default=15000)
+    parser.add_argument("--require-all-scenarios", action="store_true", help="Fail CI for blocked scenarios as well as application failures.")
     args = parser.parse_args()
     args.base_url = args.base_url.rstrip("/")
     origin = urlparse(args.base_url)
@@ -580,7 +581,8 @@ def main():
     output = args.output / "compat-results.json"
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2))
     print(json.dumps({"passed": report["passed"], "counts":report["counts"], "engines": [{"engine": r["engine"], "status": r["status"], "scenarios": r.get("scenariosExecuted", 0)} for r in report["engines"]], "report": str(output)}, ensure_ascii=False))
-    raise SystemExit(0 if report["applicationChecksPassed"] else 1)
+    accepted = report["passed"] if args.require_all_scenarios else report["applicationChecksPassed"]
+    raise SystemExit(0 if accepted else 1)
 
 
 if __name__ == "__main__":

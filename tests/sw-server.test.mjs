@@ -19,8 +19,8 @@ test('the local server serves browser modules and scoped service workers with co
   assert.match(html.headers.get('content-security-policy'), /object-src 'none'/);
   assert.doesNotMatch(html.headers.get('content-security-policy'), /unsafe-inline|unsafe-eval/);
   assert.match(await html.text(), /application-version/);
-  const module = await fetch(base + '/crypto.mjs');
-  assert.match(module.headers.get('content-type'), /javascript/);
+  const cryptoModule = await fetch(base + '/crypto.mjs');
+  assert.match(cryptoModule.headers.get('content-type'), /javascript/);
   const forms = await fetch(base + '/form-utils.mjs');
   assert.equal(forms.status, 200);
   assert.match(forms.headers.get('content-type'), /javascript/);
