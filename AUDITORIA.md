@@ -26,10 +26,12 @@ Todos os testes usam perfis temporários e dados fictícios. Cofres reais não s
 
 O teste público da primeira publicação 1.1.1 comprovou que Sites ainda servia assets diretamente sem os novos cabeçalhos. A versão 1.1.2 elimina esse caminho: o conjunto fechado entra no bundle do Worker e não é copiado para o diretório estático. A recusa de arquivos privados continua, assim como a identidade dos bytes, MIME e ETag. O SW ganha cache novo para que a política também seja atualizada nos clientes que instalaram a 1.1.1.
 
-## Candidata 1.2.0 — acesso e retirada da demonstração
+## Versão 1.2.0 — acesso e retirada da demonstração
 
 A base desta mudança é `b0c5014b61817a5c89f354631ba32937b03845ae`, conferida na main e na publicação antes da edição. A tela fica fechada por padrão no HTML e o controlador só libera o painel após criar/desbloquear o cofre. Não há mais semente automática nem edição financeira sem chave. A marca vetorial e os PNGs são próprios desta revisão.
 
 A exclusão do espaço demo compara atomicamente a cópia completa. Somente exemplos intactos e checkpoints conhecidos são removidos automaticamente; qualquer alteração ou corrupção é preservada para revisão. A limpeza não acessa as chaves do slot pessoal nem o legado. As oito regressões nativas de acesso/retirada incluem reabertura, comparação dos bytes criptografados, checkpoint, dados alterados, órfãos, CAS e descarte explícito. A compatibilidade agora inclui o primeiro acesso vazio e exige novo desbloqueio após reload.
 
-Resultados devem ser consultados na CI do commit candidato. A publicação permanece pendente enquanto o ambiente Sites de execução/empacotamento estiver indisponível; esta seção não declara publicação ou aprovação antecipada.
+A revisão funcional `b6267c6be54751d429857a1d849c77ddd2b7358d` passou na [CI 39504533614](https://github.com/ZAKOVISCK/Minhas_Finan-as/actions/runs/39504533614): 188 testes nativos únicos (Node 22 e 24), 23 cenários de compatibilidade aprovados e 1 offline WebKit bloqueado, além de 7 suítes Chromium complementares. As 96 combinações de telas e 12 verificações responsivas de acesso são cobertura interna, não testes adicionais. Build, TypeScript e contêiner também passaram.
+
+O ambiente Sites foi restabelecido e a árvore funcional foi recuperada sem divergências. A confirmação da publicação exige `/version.json`, os hashes públicos e uma execução da [verificação pública](https://github.com/ZAKOVISCK/Minhas_Finan-as/actions/workflows/public-verify.yml) para o SHA exato. Esta documentação não transforma verificações ainda não executadas em aprovadas. Dispositivos físicos e leitor de tela humano permanecem fora da infraestrutura automatizada.

@@ -61,4 +61,4 @@ Mantenha 1.1.2 ou posterior para conservar estas correções. Reverter o servido
 
 Confirme a tela de acesso, criação vazia, senha incorreta sem alteração de bytes, bloqueio/novo acesso e acesso offline. Valide a limpeza apenas dos exemplos reconhecidos e a exportação dos registros alterados para revisão. Todos os 17 arquivos públicos devem corresponder ao manifesto. Os ícones novos precisam entrar no precache da 1.2.0; cofres e schema não devem ser reinicializados.
 
-Esta revisão deve ser publicada pelo fluxo de Sites no mesmo projeto. Enquanto o ambiente de execução não estiver disponível para abrir o source, compilar e empacotar, mantenha a candidata na branch e a produção 1.1.2 na main. Nunca publique um pacote da versão anterior com o SHA novo.
+Esta revisão deve ser publicada pelo fluxo de Sites no mesmo projeto. O ambiente foi restabelecido após a validação da candidata. Use o commit final cuja árvore corresponde ao checkout, faça o build com esse SHA e, após publicar, crie uma branch `codex/verify-public-*` nesse mesmo commit para executar a conferência pública. Nunca publique um pacote da versão anterior com o SHA novo.
