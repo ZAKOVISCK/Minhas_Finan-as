@@ -1,3 +1,11 @@
+## 1.3.0 — abertura direta sem login
+
+- Removida a tela inicial de criação/desbloqueio: o painel abre diretamente, sem login no ChatGPT ou senha do aplicativo.
+- Espaço `local` separado, inicialmente vazio, persistido sem senha no IndexedDB existente. Sem exemplos fictícios.
+- Cofres pessoais anteriores e seus checkpoints permanecem cifrados e inalterados. Desbloqueio opcional em Configurações; bloquear ou recarregar volta ao espaço local.
+- Backups mantêm compatibilidade. Restaurar no espaço local informa explicitamente que os dados serão guardados sem senha.
+- Comparação atômica de revisões, recuperação, isolamento entre espaços e atualização segura do SW preservados. Regressões de abertura, reabertura, concorrência e preservação adicionadas.
+
 ## 1.2.0 — acesso para uso pessoal
 
 - Tela de acesso local por senha, criação no primeiro uso e bloqueio ao sair/reabrir, usando o cofre criptografado existente.

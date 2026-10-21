@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = await readFile(new URL('../public/sw.js', import.meta.url), 'utf8');
 const origin = 'https://financas.test';
-const current = 'mf-core-1.2.0';
+const current = 'mf-core-1.3.0';
 const previous = 'mf-core-1.1.2';
 
 function harness({ shared, clients = [], failPath = '' } = {}) {

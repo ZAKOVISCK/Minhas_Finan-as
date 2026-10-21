@@ -1,4 +1,4 @@
-# Publicação da versão 1.2.0 no projeto original
+# Publicação da versão 1.3.0 no projeto original
 
 Projeto Sites `appgprj_6ad60d588e3c819189574322fd3a67a9`; origem HTTPS preservada:
 https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site . Audiência pública, sem login de plataforma. Não adicionar D1/R2 nem transferir cofres ao servidor.
@@ -40,7 +40,7 @@ Execute os checks/build pendentes pelo fluxo oficial, sincronize o commit exato 
 
 ## Conferência pública obrigatória
 
-- `/version.json`, HTML/footer e SW identificam 1.2.0 e o commit esperado.
+- `/version.json`, HTML/footer e SW identificam 1.3.0 e o commit esperado.
 - Todos os 17 arquivos públicos têm os hashes de `UPSTREAM.json`, MIME correto, `nosniff` e CORP `same-origin`; SW com revalidação, escopo raiz e cache de versão.
 - As quatro APIs devolvem seus dados reais, fontes e timestamps; falhas externas são identificadas sem inventar valores.
 - Parâmetros inválidos 400; origem externa 403; métodos de escrita 405; código privado 404.
@@ -62,3 +62,7 @@ Mantenha 1.1.2 ou posterior para conservar estas correções. Reverter o servido
 Confirme a tela de acesso, criação vazia, senha incorreta sem alteração de bytes, bloqueio/novo acesso e acesso offline. Valide a limpeza apenas dos exemplos reconhecidos e a exportação dos registros alterados para revisão. Todos os 17 arquivos públicos devem corresponder ao manifesto. Os ícones novos precisam entrar no precache da 1.2.0; cofres e schema não devem ser reinicializados.
 
 Esta revisão deve ser publicada pelo fluxo de Sites no mesmo projeto. O ambiente foi restabelecido após a validação da candidata. Use o commit final cuja árvore corresponde ao checkout, faça o build com esse SHA e, após publicar, crie uma branch `codex/verify-public-*` nesse mesmo commit para executar a conferência pública. Nunca publique um pacote da versão anterior com o SHA novo.
+
+## Validação da abertura direta 1.3.0
+
+Confirme painel acessível sem diálogo de senha, criação e reabertura de contas/lançamentos locais, ausência de exemplos e preservação byte a byte de cofres anteriores. Teste desbloqueio opcional, bloqueio de volta ao espaço local, restauração de backups, concorrência e offline. O novo slot local usa o banco/schema existentes; não limpe IndexedDB, cofres, checkpoints ou dados do navegador.

@@ -39,7 +39,7 @@ import {
   IMPORT_LIMIT,
 } from "./imports.mjs";
 import { restorePublicCache, updateMarket } from "./market.mjs";
-import { retireBuiltInDemo } from "./access.mjs";
+import { retireBuiltInDemo, openLocalSpace } from "./access.mjs";
 import {
   field,
   select,
@@ -208,6 +208,8 @@ function context() {
     historyPages,
     memory,
     legacy,
+    hasPersonal: !!personalHead,
+    retiredDemo: demoRetirement.status === "review",
     storageStats: stats,
     backupAt: stamp("backup"),
     verifiedAt: stamp("verified"),
@@ -221,7 +223,7 @@ function toast(message) {
   toast.timer = setTimeout(() => $("#toast").classList.remove("show"), 6000);
 }
 function renderNotice() {
-  if (slot !== "personal") { renderAccess(); return; }
+  if (slot === "locked") { renderAccess(); return; }
   if (privacyMasked) return;
   const messages = [];
   if (blocked)
@@ -234,7 +236,7 @@ function renderNotice() {
     );
   if (memory)
     messages.push(
-      "Armazenamento indisponível: alterações apenas nesta sessão. Exporte antes de sair.",
+      "Armazenamento indisponível: alterações bloqueadas. Os registros existentes foram preservados.",
     );
   if (legacy)
     messages.push(
@@ -247,52 +249,41 @@ function renderNotice() {
       ? '<button data-action="raw-export">Exportar dados brutos</button>'
       : "");
   $("#storage-notice").hidden = !messages.length;
-  $("#demo-banner").hidden = slot !== "demo";
+  $("#demo-banner").hidden = true;
   $("#mode-label").textContent =
-    slot === "demo" ? "Demonstração" : "Cofre pessoal aberto";
+    slot === "personal" ? "Cofre pessoal aberto" : "Dados locais · sem senha";
   $("#mode-label").classList.toggle("personal", slot === "personal");
   $("#lock-button").hidden = slot !== "personal";
   $("#storage-location").textContent = memory
     ? "Somente nesta sessão"
     : slot === "personal"
       ? "Cofre criptografado neste navegador"
-      : "Demonstração neste navegador";
+      : "Dados locais neste navegador · sem senha";
   $("#undo-notice").hidden = !undo;
   $("#update-notice").hidden = !waitingWorker;
 }
 function renderAccess() {
-  const locked = slot !== "personal" || privacyMasked;
-  document.body.classList.toggle("is-locked", locked);
-  $("#access-screen").hidden = !locked;
-  if (!locked) return;
-  document.title = "Acessar · Minhas finanças";
+  document.body.classList.remove("is-locked");
+  document.title = "Minhas finanças";
   $("#main").replaceChildren();
-  $("#main").setAttribute("aria-busy", "false");
+  $("#main").setAttribute("aria-busy", "true");
+  const message = document.createElement("p");
+  message.className = "empty";
+  message.textContent = "Abrindo seus dados locais…";
+  $("#main").append(message);
   $("#profile").textContent = "•";
-  $("#mode-label").textContent = "Cofre bloqueado";
-  $("#breadcrumb").textContent = "Acesso";
+  $("#mode-label").textContent = transitioning ? "Cofre bloqueado" : "Carregando…";
+  $("#breadcrumb").textContent = "Visão geral";
   $("#storage-notice").replaceChildren();
   $("#storage-notice").hidden = true;
   $("#undo-notice").hidden = true;
-  $("#access-title").textContent = personalHead ? "Entre no seu cofre." : "Comece pelo seu acesso.";
-  $("#access-caption").textContent = personalHead
-    ? "Use a senha deste dispositivo para acessar suas finanças."
-    : "Crie sua senha. Suas contas, investimentos e lançamentos começam vazios.";
-  $("#access-primary").textContent = personalHead ? "Entrar com minha senha" : "Criar meu acesso";
-  $("#access-primary").disabled = !db || memory || busy || transitioning || privacyMasked;
-  $("#access-status").textContent = memory
-    ? "O navegador não liberou o armazenamento. Seus dados foram preservados. Habilite o armazenamento e recarregue para entrar."
-    : demoRetirement.status === "removed"
-      ? "Os exemplos de demonstração foram removidos. O cofre pessoal foi preservado."
-      : "Seu cofre é criptografado neste navegador. A senha não é enviada ao servidor.";
-  $("#access-review").hidden = demoRetirement.status !== "review";
-  $("#access-update-notice").hidden = !waitingWorker;
+  $("#lock-button").hidden = true;
 }
+
 function render() {
-  if (slot !== "personal") { renderAccess(); return; }
+  if (slot === "locked") { renderAccess(); return; }
   if (!state || privacyMasked) return;
   document.body.classList.remove("is-locked");
-  $("#access-screen").hidden = true;
   const previousFocus = rememberFocus();
   view = isRoute(view) ? view : "inicio";
   document.title = routes[view] + " · Minhas finanças";
@@ -323,7 +314,7 @@ function renderLedger() {
   restoreFocus(previousFocus, previousFocus.inMain);
 }
 function navigate(next) {
-  if (slot !== "personal" || !key) return;
+  if (slot === "locked") return;
   if (busy || processing || transitioning) {
     toast("Aguarde a operação terminar.");
     return;
@@ -339,8 +330,8 @@ function navigate(next) {
   window.scrollTo({ top: 0, behavior: "instant" });
 }
 function assertWritable() {
-  if (slot !== "personal" || !key || !db || memory)
-    throw new Error("Entre no seu cofre antes de alterar suas finanças.");
+  if (!["personal", "local"].includes(slot) || (slot === "personal" && !key) || !db || memory)
+    throw new Error("O armazenamento precisa estar disponível para salvar alterações.");
   if (transitioning || privacyMasked)
     throw new Error("Aguarde a troca de espaço terminar.");
   if (blocked)
@@ -1279,13 +1270,16 @@ async function closeSession() {
       catch { draftWarning = true; }
     }
     personalHead = personalStatus(await loadRaw(db, "personal"));
+    state = await openLocalSpace(db);
   } catch {
     memory = true;
+    blocked = true;
   } finally {
+    slot = "local";
     try { sessionStorage.removeItem("mf-space"); } catch { /* optional preference */ }
     transitioning = false;
-    renderAccess();
-    $("#access-primary").focus({ preventScroll: true });
+    render();
+    $("#main").focus({ preventScroll: true });
     if (draftWarning) toast("Cofre bloqueado. Os registros foram preservados; o rascunho desta sessão não pôde ser conservado.");
   }
   return !draftWarning;
@@ -1324,9 +1318,7 @@ function maskPersonalInterface() {
   if (slot !== "personal" || privacyMasked) return;
   if ($("#dialog").open) stashDialog();
   privacyMasked = true;
-  document.body.classList.add("is-locked");
-  $("#access-screen").hidden = false;
-  $("#access-primary").disabled = true;
+  document.body.classList.remove("is-locked");
   document.title = "Cofre bloqueado · Minhas finanças";
   $("#main").replaceChildren();
   const message = document.createElement("p");
@@ -1350,7 +1342,7 @@ async function lockVault() {
     return;
   }
   const draftsPreserved = await closeSession();
-  if (draftsPreserved) toast("Cofre bloqueado. Entre com sua senha para continuar.");
+  if (draftsPreserved) toast("Cofre bloqueado. O espaço sem senha está aberto.");
 }
 async function unlock(password, checkpoint = false) {
   const raw = await loadRaw(db, "personal");
@@ -1471,15 +1463,6 @@ async function submitForm(event) {
       setBusy(true);
       const restored = await readBackup(importSession.text, d.password);
       if (privacyMasked) return;
-      if (
-        kind === "restore" &&
-        slot === "demo" &&
-        JSON.parse(importSession.text.replace(/^\uFEFF/, "")).format ===
-          "minhas-financas-encrypted"
-      )
-        throw new Error(
-          "Abra seu cofre pessoal antes de restaurar um backup criptografado. A demonstração não tem senha.",
-        );
       if (kind === "verify-backup") {
         saveStamp("verified");
         closeDialog();
@@ -1496,7 +1479,7 @@ async function submitForm(event) {
       if (hidden) throw new Error("Mostre os valores antes de restaurar.");
       if (
         !confirm(
-          `Restaurar ${restored.accounts.length} conta(s), ${restored.entries.length} lançamento(s) e ${restored.payments.length} pagamento(s)? Isto substitui o espaço ${slot === "personal" ? "pessoal" : "de demonstração"} atual. A cópia anterior será preservada.`,
+          `Restaurar ${restored.accounts.length} conta(s), ${restored.entries.length} lançamento(s) e ${restored.payments.length} pagamento(s)? Isto substitui o espaço ${slot === "personal" ? "pessoal protegido" : "local sem senha"} atual. ${slot === "local" ? "Os registros restaurados serão guardados sem senha neste navegador; cofres protegidos anteriores permanecerão separados. " : ""}A cópia anterior será preservada.`,
         )
       )
         return;
@@ -2059,7 +2042,7 @@ async function action(name, id, element) {
     return;
   }
   const publicActions = ["personal", "mode", "personal-raw-export", "unlock-checkpoint", "retired-demo-export", "retired-demo-discard", "check-update", "apply-update", "install"];
-  if (slot !== "personal" && !publicActions.includes(name)) {
+  if (slot === "locked" && !publicActions.includes(name)) {
     toast("Entre no seu cofre para continuar.");
     return;
   }
@@ -2099,7 +2082,8 @@ async function action(name, id, element) {
       if (slot === "personal") { toast("Seu cofre já está aberto."); return; }
       if (!db || memory) throw new Error("Habilite o armazenamento deste navegador para entrar.");
       personalHead = personalStatus(await loadRaw(db, "personal"));
-      openDialog(personalHead ? "unlock" : "create");
+      if (!personalHead) { toast("Não há cofre protegido anterior neste navegador."); return; }
+      openDialog("unlock");
       return;
     }
     if (name === "retired-demo-export") {
@@ -2113,7 +2097,7 @@ async function action(name, id, element) {
       if (!confirm("Remover o antigo espaço de testes? Guarde uma cópia primeiro se houver registros seus. O cofre pessoal não será alterado.")) return;
       await removeDemoSlot(db, demoRetirement.raw);
       demoRetirement = { status: "removed", raw: null };
-      renderNotice();
+      render();
       return;
     }
     if (name === "unlock-checkpoint") {
@@ -2367,24 +2351,17 @@ async function action(name, id, element) {
       return;
     }
     if (name === "migrate") {
-      if (slot !== "personal") {
-        toast(
-          "Crie ou abra o cofre pessoal primeiro. Depois use Migrar dados antigos em Configurações.",
-        );
-        openDialog("mode", "", { target: "personal" });
-        return;
-      }
       const migrated = F.migrate(legacy);
       if (
         !confirm(
-          `Migrar ${migrated.entries.length} lançamento(s) antigos para o cofre? Isto substitui o conteúdo pessoal atual. A cópia antiga sem senha será removida após a gravação criptografada. Confira se há exemplos entre os registros.`,
+          `Migrar ${migrated.entries.length} lançamento(s) antigos para este espaço? Isto substitui os dados ${slot === "personal" ? "do cofre protegido" : "locais sem senha"} atuais. Confira se há exemplos entre os registros. A origem antiga só é removida ao migrar para o cofre criptografado.`,
         )
       )
         return;
       await commit(
         { ...migrated, revision: state.revision },
         "Dados antigos migrados. Confira as notas em Configurações.",
-        { removeLegacy: true },
+        { removeLegacy: slot === "personal" },
       );
       render();
       return;
@@ -2695,10 +2672,14 @@ async function bootstrap() {
         if (sessionStorage.getItem("mf-space") === "demo") sessionStorage.removeItem("mf-space");
       } catch { /* optional preferences */ }
     }
+    state = await openLocalSpace(db);
+    slot = "local";
     stats = await storageInfo().catch(() => null);
   } catch (e) {
     memory = true;
-    toast("O armazenamento não está disponível. Seus dados foram preservados.");
+    blocked = true;
+    slot = "local";
+    toast("O armazenamento não está disponível ou precisa de recuperação. Os registros existentes foram preservados.");
   }
   restorePublicCache();
   render();

@@ -3,13 +3,14 @@ from playwright.sync_api import expect
 TEST_PASSWORD = "senha sintética exclusiva das fixtures QA 2026"
 
 def unlock_fixture(page, password=TEST_PASSWORD):
-    expect(page.locator("#access-screen")).to_be_visible()
+    expect(page.locator("#main")).to_have_attribute("aria-busy", "false")
+    page.locator('#nav [data-view="configuracoes"]').click()
     page.locator("#access-primary").click()
     expect(page.locator("#dialog-title")).to_have_text("Abrir cofre pessoal")
     page.locator('#dialog-form input[name="password"]').fill(password)
     page.locator("#dialog-submit").click()
     expect(page.locator("#dialog")).not_to_be_visible()
-    expect(page.locator("#access-screen")).to_be_hidden()
+    expect(page.locator("#mode-label")).to_have_text("Cofre pessoal aberto")
     expect(page.locator("#main")).to_have_attribute("aria-busy", "false")
 
 def reload_fixture(page, password=TEST_PASSWORD, wait_until="domcontentloaded"):
@@ -19,7 +20,7 @@ def reload_fixture(page, password=TEST_PASSWORD, wait_until="domcontentloaded"):
     page.evaluate("(route)=>location.hash=route",route)
 
 def seed_fixture(page, state=None, password=TEST_PASSWORD):
-    expect(page.locator("#access-primary")).to_be_enabled()
+    expect(page.locator("#main")).to_have_attribute("aria-busy", "false")
     page.evaluate("""async ({state,password})=>{
       const S=await import('/storage.mjs'),F=await import('/finance.mjs'),C=await import('/crypto.mjs'),db=await S.openDatabase();
       try{

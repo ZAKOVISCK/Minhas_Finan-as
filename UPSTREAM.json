@@ -1,26 +1,26 @@
 {
   "repository": "https://github.com/ZAKOVISCK/Minhas_Finan-as",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "baseCommit": "0c22b907b2f89c79ceb81d9e414a9cea4b4697f2",
   "previousSiteCommit": "715dbbac986b7c74ddc33a0aed5e959028eb6bdb",
   "legacyCompatibilityPatch": "f5271cc2f85cfd87d514a545b22570b9fa3023eb",
   "publicFilesSha256": {
-    "index.html": "297dd11df17034e1f8d751621543832728aabfb989c743056fe6cf2de392d4ee",
+    "index.html": "4aadc41b47f2a69e2172dcf08e08a79a39ff9822272c0a02a01536bafc6e5b76",
     "styles.css": "71e8726bc5635f80f37db5bec05c89612d9a4906981d4d81ec391af97da98c1d",
-    "app.js": "d83fc5f0db46a6a32dadf03597577b7c37f78489b2d09ce54133cc3ac4c31662",
+    "access.mjs": "25bb553a737d02b17d1462db3fed85b3aaeb7ecf89ead35a989f842bbb4e4c3a",
+    "app.js": "44151f3df6e4d1a432d17dbd25d67a03cae13603d590580ebb2ebbd18b815285",
     "finance.mjs": "5fe96395fd09b1c968f310390793fb6f830c5ae44e20d21ea458d8e83219f53a",
     "legacy-finance.mjs": "1742c21a7820f01078ccc39dca6682f408981fc385a166a95a2096b4efe631e4",
-    "storage.mjs": "0ceebe023c4afc72c63fcf8ce106257eb6a4f0e32d406a04d2ecfb84f0e08b00",
+    "storage.mjs": "9c9ec470415c91a8ee83686f6e8d1187071a8b08bf645dd72a524014d5ff12e0",
     "crypto.mjs": "9bbabb1e8ee914a5084a43c7b9409c44c94b8b907c4b27b2b81a70892a9a6ec5",
-    "views.mjs": "5e5fd65df570a770776154dfc0b0680c75a9c45ffa0dc1b9e9688b8e0987c7af",
+    "views.mjs": "dc70b0901bd5916ff34f26ce084932410592babb88694d17b3fac5c42d7fcccc",
     "imports.mjs": "933a225ad2953d5bd1eab943f55e44cc7dc6e031dda43e281c3f1831d6142a39",
     "market.mjs": "7f6d2d07033d97679b2ccb19ad72996eba067150efe3a48d498fa735d7025251",
     "form-utils.mjs": "372f9596a7ddacfd92c6a4cf4498233b65ffbfb2f14312906f2590efc86b7af2",
-    "sw.js": "4aa83b469708761063841a31e21118afe2cfe25d3f0dd93b4ca5da28765750ec",
-    "manifest.webmanifest": "53c1bfd870c746e31e2baa6a681cc17f5a1b599309a75883c8d4e5f5aee32804",
+    "sw.js": "b05b491924d63e32de2bf3e12ae264c45195ed08d8a0edcda65acfe171662e9b",
+    "manifest.webmanifest": "72b7c82c19dc988aac1d9dfe71f6ac0d3a900e90b29e05402eff8ea76b61ac82",
     "icon.svg": "e0ad1eca4f265532678d857905c25f1fad9af4721a7923c9d25eae1a4366607e",
     "icon-192.png": "ca7f848814f7cc45d63f2976ead0b64db8ccc4ddf28a6f9b0e6b13f7b062d1f4",
-    "icon-512.png": "b20d4c42b58d90fd9c5c555290e746552e678991dc2cba5013acf10157fe3fbc",
-    "access.mjs": "28051eb286aa1aa4a977ce5e615985ef9b427d2142b92a385ac56a25e49bbf6a"
+    "icon-512.png": "b20d4c42b58d90fd9c5c555290e746552e678991dc2cba5013acf10157fe3fbc"
   }
 }

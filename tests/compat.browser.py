@@ -168,47 +168,45 @@ class Checks:
         expect(self.page.locator("#dialog")).not_to_be_visible()
 
     def choose_personal(self):
+        self.navigate("configuracoes")
+        if not self.page.locator("#access-primary").count():
+            self.page.reload(wait_until="domcontentloaded")
+            expect(self.page.locator("#main")).to_have_attribute("aria-busy", "false")
+            self.navigate("configuracoes")
         self.page.locator("#access-primary").click()
 
     def first_access_empty_and_login(self):
-        expect(self.page.locator("#access-screen")).to_be_visible()
-        assert self.page.locator("#main").inner_text()==""
+        expect(self.page.locator("#main h1")).to_contain_text("Olá")
+        expect(self.page.locator("#dialog")).not_to_be_visible()
+        assert self.page.locator('#access-screen').count()==0
+        assert self.page.locator('input[type="password"]').count()==0
         initial=self.page.evaluate("""async()=>{
           const S=await import('/storage.mjs'),db=await S.openDatabase();
-          try{return {personal:await S.loadRaw(db,'personal'),demo:await S.loadRaw(db,'demo')}}finally{db.close()}
+          try{return {local:await S.decodeRaw(await S.loadRaw(db,'local')),personal:await S.loadRaw(db,'personal'),demo:await S.loadRaw(db,'demo')}}finally{db.close()}
         }""")
-        for raw in initial.values():assert not raw.get('head') and not raw['records'] and not raw.get('journal')
+        for collection in ['accounts','entries','payments','transfers','trades','dividends']:
+            assert not initial['local'][collection]
+        for slot in ['personal','demo']:
+            assert not initial[slot].get('head') and not initial[slot]['records']
         for width,height in [(320,568),(390,844),(768,1024),(1440,1000)]:
             self.page.set_viewport_size({'width':width,'height':height})
             assert self.page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
-        assert self.page.locator('#access-screen img').evaluate_all("els=>els.every(el=>el.complete&&el.naturalWidth>0)")
         assert self.page.evaluate("""async()=>{for(const size of [192,512]){const image=new Image();image.src="/icon-"+size+".png";await image.decode();if(image.naturalWidth!==size||image.naturalHeight!==size)return false;}return true;}""")
-        self.page.screenshot(path=str(self.args.output/f'{self.engine}-access.png'),full_page=True)
-        self.choose_personal()
-        self.fill("name",PRIVATE_NAME)
-        self.fill("password",PASSWORD)
-        self.fill("confirmation",PASSWORD)
-        self.submit()
-        expect(self.page.locator("#dialog-title")).to_have_text("Nova conta")
-        self.page.locator("#close-dialog").click()
-        fresh=self.state()
-        collections=["accounts","entries","payments","transfers","cards","budgets","reserves","goals","recurrences","assets","trades","dividends","prices","snapshots","watchlist"]
-        assert all(not fresh[name] for name in collections)
-        encrypted=self.raw_personal()
-        self.page.locator("#lock-button").click()
-        expect(self.page.locator("#access-screen")).to_be_visible()
-        assert PRIVATE_NAME not in self.page.locator("body").inner_text()
-        self.choose_personal()
-        self.fill("password","senha incorreta apenas para QA")
-        self.submit()
-        expect(self.page.locator("#dialog-error")).to_be_visible()
-        assert self.raw_personal()==encrypted
-        self.fill("password",PASSWORD);self.save()
-        self.page.reload(wait_until="domcontentloaded")
-        expect(self.page.locator("#access-screen")).to_be_visible()
-        self.choose_personal();self.fill("password",PASSWORD);self.save()
-        assert all(not self.state()[name] for name in collections)
-        return {"firstAccessCreatesNoDemo":True,"newVaultFinanciallyEmpty":True,"wrongPasswordPreservesRaw":True,"reloadRequiresLogin":True,"brandLoads":True,"loginViewportChecks":4}
+        self.page.set_viewport_size({'width':1440,'height':1000})
+        self.page.screenshot(path=str(self.args.output/f'{self.engine}-open.png'),full_page=True)
+        self.navigate('contas');self.page.locator('[data-action="account"]').click()
+        self.fill('name','Conta local QA');self.fill('opening','100,00');self.save()
+        self.navigate('lancamentos');self.page.locator('.page-heading [data-action="entry"]').click()
+        self.fill('description','Despesa local QA');self.fill('amount','10,00');self.save()
+        self.page.reload(wait_until='domcontentloaded')
+        expect(self.page.locator('#main')).to_have_attribute('aria-busy','false')
+        expect(self.page.locator('#dialog')).not_to_be_visible()
+        saved=self.page.evaluate("""async()=>{const S=await import('/storage.mjs'),db=await S.openDatabase();try{return await S.decodeRaw(await S.loadRaw(db,'local'))}finally{db.close()}}""")
+        assert len(saved['accounts'])==1 and len(saved['entries'])==1
+        assert saved['accounts'][0]['name']=='Conta local QA' and saved['entries'][0]['amount']==1000
+        self.navigate('configuracoes')
+        expect(self.page.locator('#access-primary')).to_have_count(0)
+        return {"opensWithoutLogin":True,"newSpaceFinanciallyEmpty":True,"localEditsPersistWithoutPassword":True,"brandLoads":True,"openViewportChecks":4}
 
     def personal_form_and_focus(self):
         seed_fixture(self.page,password=PASSWORD)
@@ -245,13 +243,10 @@ class Checks:
                 "centavosSavedExactly": True, "focusReturnsAfterEdit": True, "reloadPreservesRecord": True}
 
     def vault_and_encrypted_backup(self):
-        self.choose_personal()
-        expect(self.page.locator("#dialog-title")).to_have_text("Criar meu cofre pessoal")
-        self.fill("name", PRIVATE_NAME)
-        self.fill("password", PASSWORD)
-        self.fill("confirmation", PASSWORD)
-        self.submit()
-        expect(self.page.locator("#dialog-title")).to_have_text("Nova conta")
+        empty=self.page.evaluate("async()=> (await import('/finance.mjs')).emptyState()")
+        empty['name']=PRIVATE_NAME
+        seed_fixture(self.page,empty,PASSWORD)
+        self.navigate('contas');self.page.locator('[data-action="account"]').click()
         self.fill("name", PRIVATE_ACCOUNT)
         self.fill("opening", "1000,00")
         self.save()
@@ -278,8 +273,8 @@ class Checks:
             assert decoded["name"] == PRIVATE_NAME and len(decoded["entries"]) == 1
             assert decoded["entries"][0]["description"] == PRIVATE_ENTRY and decoded["entries"][0]["amount"] == 1234
         self.page.locator("#lock-button").click()
-        expect(self.page.locator("#access-screen")).to_be_visible()
-        expect(self.page.locator("#mode-label")).to_have_text("Cofre bloqueado")
+        expect(self.page.locator("#main")).to_have_attribute("aria-busy", "false")
+        expect(self.page.locator("#mode-label")).to_have_text("Dados locais · sem senha")
         expect(self.page.locator("#lock-button")).to_be_hidden()
         visible = self.page.locator("body").inner_text()
         fields = self.page.locator("input,textarea,select").evaluate_all("els => els.map(el=>el.value).join('\\n')")

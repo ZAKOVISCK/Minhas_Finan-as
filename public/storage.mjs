@@ -13,7 +13,7 @@ const validRevision = (value) =>
   value >= 0 &&
   value < Number.MAX_SAFE_INTEGER - 1;
 function checkSlot(slot) {
-  if (!["demo", "personal"].includes(slot))
+  if (!["demo", "personal", "local"].includes(slot))
     throw new Error("Espaço de armazenamento inválido.");
 }
 function checkHead(head, slot) {

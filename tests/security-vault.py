@@ -12,6 +12,7 @@ import unittest
 from urllib.parse import urlparse
 
 from playwright.sync_api import expect, sync_playwright
+from browser_session import seed_fixture,unlock_fixture
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--base-url", default="http://127.0.0.1:3000")
@@ -71,13 +72,10 @@ class VaultSecurity(unittest.TestCase):
 
     def create_personal_records(self):
         self.start()
-        self.page.locator('#access-primary').click()
-        expect(self.page.locator("#dialog-title")).to_have_text("Criar meu cofre pessoal")
-        self.page.locator('#dialog input[name="name"]').fill(PRIVATE_NAME)
-        self.page.locator('#dialog input[name="password"]').fill(PASSWORD)
-        self.page.locator('#dialog input[name="confirmation"]').fill(PASSWORD)
-        self.submit()
-        expect(self.page.locator("#dialog-title")).to_have_text("Nova conta")
+        empty=self.page.evaluate("async()=> (await import('/finance.mjs')).emptyState()")
+        empty['name']=PRIVATE_NAME
+        seed_fixture(self.page,empty,PASSWORD)
+        self.navigate('contas');self.page.locator('[data-action="account"]').click()
         self.page.locator('#dialog input[name="name"]').fill(PRIVATE_ACCOUNT)
         self.page.locator('#dialog input[name="opening"]').fill("1000,00")
         self.submit()
@@ -113,6 +111,7 @@ class VaultSecurity(unittest.TestCase):
         self.page.locator("#search").fill(PRIVATE_ENTRY)
 
     def unlock(self):
+        self.navigate('configuracoes')
         self.page.locator('#access-primary').click()
         expect(self.page.locator("#dialog-title")).to_have_text("Abrir cofre pessoal")
         self.page.locator('#dialog input[name="password"]').fill(PASSWORD)
@@ -152,7 +151,7 @@ class VaultSecurity(unittest.TestCase):
         self.assert_private_dom_cleared()
         self.page.evaluate("window.__vaultTestRelease()")
         self.page.wait_for_function("() => document.querySelector('#toast').textContent.includes('Cofre bloqueado')")
-        self.assertEqual(self.page.locator("#main").inner_text(), "")
+        expect(self.page.locator("#main")).to_have_attribute("aria-busy", "false")
         self.unlock()
         self.navigate("lancamentos")
         expect(self.page.locator("#ledger-results")).to_contain_text(PRIVATE_ENTRY)
@@ -169,10 +168,10 @@ class VaultSecurity(unittest.TestCase):
             crypto.subtle.encrypt = () => Promise.reject(new Error('Falha sintética de criptografia'));
         }""")
         self.page.locator("#lock-button").click()
-        expect(self.page.locator("#mode-label")).to_have_text("Cofre bloqueado")
+        expect(self.page.locator("#mode-label")).to_have_text("Dados locais · sem senha")
         self.assert_private_dom_cleared()
         self.page.evaluate("delete crypto.subtle.encrypt")
-        self.assertEqual(self.page.locator("#main").inner_text(), "")
+        expect(self.page.locator("#main")).to_have_attribute("aria-busy", "false")
         self.unlock()
         self.navigate("lancamentos")
         expect(self.page.locator("#ledger-results")).to_contain_text(PRIVATE_ENTRY)
@@ -195,20 +194,21 @@ class VaultSecurity(unittest.TestCase):
             expect(self.page.locator("#main h1")).to_contain_text(PRIVATE_NAME)
         self.assertEqual(self.errors, [])
 
-    def test_storage_unavailable_refuses_unencrypted_financial_session(self):
+    def test_storage_unavailable_refuses_unsaved_financial_edits(self):
         self.context.add_init_script("Object.defineProperty(window, 'indexedDB', {value: undefined})")
         self.start()
-        expect(self.page.locator("#access-screen")).to_be_visible()
-        expect(self.page.locator("#access-primary")).to_be_disabled()
-        expect(self.page.locator("#access-status")).to_contain_text("preservados")
-        self.assertEqual(self.page.locator("#main").inner_text(), "")
+        expect(self.page.locator("#main")).to_have_attribute("aria-busy", "false")
+        expect(self.page.locator("#storage-notice")).to_be_visible()
+        expect(self.page.locator("#storage-notice")).to_contain_text("preservados")
+        self.page.locator('.page-heading [data-action="entry"]').click()
+        expect(self.page.locator("#main")).to_have_attribute("aria-busy", "false")
         self.page.evaluate("""async () => {
             const channel = new BroadcastChannel('minhas-financas-v3');
             channel.postMessage({slot: 'personal', revision: 999999});
             await new Promise(resolve => setTimeout(resolve, 100));
             channel.close();
         }""")
-        self.assertNotIn("Outra aba", self.page.locator("#access-status").inner_text())
+        self.assertNotIn("Outra aba", self.page.locator("#storage-notice").inner_text())
         expect(self.page.locator("#dialog")).not_to_be_visible()
         self.assertEqual(self.errors, [])
 

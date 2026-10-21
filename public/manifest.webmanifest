@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Minhas finanças",
   "short_name": "Finanças",
-  "description": "Seu cofre pessoal: finanças e investimentos com acesso por senha local.",
+  "description": "Finanças e investimentos com abertura direta e dados locais neste navegador.",
   "lang": "pt-BR",
   "start_url": "/",
   "scope": "/",

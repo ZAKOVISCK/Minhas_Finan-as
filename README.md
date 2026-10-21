@@ -1,6 +1,6 @@
-# Minhas Finanças 1.2.0
+# Minhas Finanças 1.3.0
 
-Finanças pessoais locais, com acesso por senha local, cofre criptografado, controle financeiro, carteira e fontes econômicas públicas. Sem assinatura, credenciais bancárias ou APIs pagas.
+Finanças pessoais com abertura direta, sem login, controle financeiro, carteira e fontes econômicas públicas. Sem assinatura, credenciais bancárias ou APIs pagas.
 
 Site original: https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site .
 
@@ -60,7 +60,7 @@ O mesmo domínio e o IndexedDB são mantidos. Schema 3, envelope 1, AES-GCM e KD
 
 Históricos de transferências, operações e proventos têm paginação independente e ações até o registro mais antigo. Os cálculos usam o conjunto completo, independentemente da página. A navegação de páginas não grava alterações financeiras.
 
-O cache `mf-core-1.2.0` instala todos os assets de forma atômica. **Atualizar aplicativo** ativa a versão aguardando; as outras abas preservam seus arquivos até recarregar. Não limpe os dados do site para atualizar.
+O cache `mf-core-1.3.0` instala todos os assets de forma atômica. **Atualizar aplicativo** ativa a versão aguardando; as outras abas preservam seus arquivos até recarregar. Não limpe os dados do site para atualizar.
 
 A rotina **Verify original public Site** (disparo manual ou criação de uma branch `codex/verify-public-*` depois da publicação) verifica novamente os mesmos cenários em produção, somente no domínio autorizado e com contextos novos e descartáveis; seus resultados não são somados aos da CI local. `node scripts/verify-public.mjs --commit <SHA>` confere bytes, cabeçalhos, APIs e controles de acesso.
 
@@ -68,13 +68,13 @@ A rotina **Verify original public Site** (disparo manual ou criação de uma bra
 
 BCB/IBGE, notícias IBGE, comunicados Fed e duas amostras brapi dependem de conexão e disponibilidade externa. Não há promessa de bolsa completa ou cotação em tempo real. Cofres, senhas e registros financeiros não são enviados às APIs. Backups externos continuam necessários.
 
-## Acesso e primeiro uso — 1.2.0
+## Abertura direta — 1.3.0
 
-A tela inicial exige criar ou desbloquear o cofre antes de mostrar o painel. No primeiro acesso, informe seu nome e uma senha de pelo menos 12 caracteres. O cofre começa sem contas, lançamentos, pagamentos, posições ou investimentos. Categorias padrão são uma estrutura de organização, sem valores financeiros.
+O painel abre sem login, cadastro ou senha. O espaço `local` começa vazio e guarda os registros **sem criptografia por senha**, somente neste navegador. Os backups desse espaço são JSON legível; guarde-os em local protegido. Não existe sincronização em nuvem.
 
-O login é local: a senha deriva a chave AES-GCM e não é enviada ao servidor. Reabrir a página pede a senha novamente. **Bloquear cofre** encerra a sessão e remove os dados pessoais da interface; rascunhos desta sessão são conservados somente se puderem ser criptografados. Os bloqueios automáticos e a troca completa de senha permanecem.
+Cofres `personal` existentes não são convertidos nem apagados. Em Configurações, **Desbloquear cofre anterior** permite abri-los com a senha original. Bloquear ou recarregar retorna ao espaço local. Os dois conjuntos permanecem separados. O desbloqueio serve apenas aos cofres anteriores, sem impedir o uso normal do app.
 
-Cada navegador/dispositivo possui seu próprio cofre. Para usar em outro aparelho, exporte o backup criptografado e restaure-o no outro navegador. Não há conta por e-mail, sincronização em nuvem ou recuperação de senha pelo servidor.
+Backups criptografados continuam sendo lidos com a senha do arquivo. Ao restaurar no espaço local, a confirmação informa que o conteúdo restaurado será salvo sem senha e que o cofre anterior permanece separado. Nenhuma conversão ocorre automaticamente. Na ausência/falha do IndexedDB, a interface continua acessível, mas as alterações ficam bloqueadas.
 
 ### Retirada dos exemplos
 

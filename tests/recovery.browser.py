@@ -23,7 +23,7 @@ blocked_requests=[]
 def ready(page):
     page.goto(ORIGIN+'/',wait_until='networkidle')
     expect(page.locator('#main')).to_have_attribute('aria-busy','false')
-    expect(page.locator('#access-screen')).to_be_visible()
+    expect(page.locator('#mode-label')).to_have_text('Dados locais · sem senha')
 
 
 def raw(page,slot):
@@ -34,6 +34,7 @@ def raw(page,slot):
 
 
 def personal_dialog(page):
+    page.locator('#nav [data-view="configuracoes"]').click()
     page.locator('#access-primary').click()
     page.locator('#dialog-form [name="password"]').wait_for()
     assert page.locator('#dialog-title').inner_text()=='Abrir cofre pessoal'
@@ -156,14 +157,15 @@ with sync_playwright() as pw:
           }finally{db.close()}
         }''')
         ready(page)
+        page.locator('#nav [data-view="configuracoes"]').click()
         page.locator('#access-review:not([hidden])').wait_for()
         assert raw(page,'demo')==seeded
         with page.expect_download() as dl:
             page.locator('#access-review [data-action="retired-demo-export"]').click()
         exported=json.loads(Path(dl.value.path()).read_text())
         assert exported['raw']==seeded
-        assert page.locator('#main').inner_text()==''
-        assert page.locator('#access-screen').is_visible()
+        assert page.locator('#main h1').is_visible()
+        assert page.locator('#main h1').is_visible()
         assert raw(page,'demo')==seeded
         return {'orphanRecordsPreserved':len(seeded['records']),'rawDownloadPreservesRecords':True,'financialDashboardClosed':True}
     run('retired-demo-orphan-preserved-with-export',demo_orphan)
@@ -184,6 +186,7 @@ with sync_playwright() as pw:
         assert not seeded['before']['records'] and seeded['before']['journal']['head']
         assert seeded['rejected'] and seeded['before']==seeded['after']
         ready(page)
+        page.locator('#nav [data-view="configuracoes"]').click()
         page.locator('#access-review:not([hidden])').wait_for()
         assert raw(page,'demo')==seeded['before']
         with page.expect_download() as dl:

@@ -1,5 +1,18 @@
-import { demo, validateState } from "./finance.mjs";
-import { loadRaw, decodeRaw, previousRaw, removeDemoSlot, StorageConflict } from "./storage.mjs";
+import { demo, emptyState, validateState } from "./finance.mjs";
+import { loadRaw, decodeRaw, previousRaw, saveSlot, removeDemoSlot, StorageConflict } from "./storage.mjs";
+
+/** A separate open workspace. Existing encrypted vaults are never rewritten. */
+export async function openLocalSpace(db) {
+  const current = await decodeRaw(await loadRaw(db, "local"));
+  if (current) return current;
+  try { return await saveSlot(db, "local", null, emptyState(), -1); }
+  catch (error) {
+    if (!(error instanceof StorageConflict)) throw error;
+    const saved = await decodeRaw(await loadRaw(db, "local"));
+    if (!saved) throw error;
+    return saved;
+  }
+}
 
 function canonical(value) {
   if(Array.isArray(value))return value.map(canonical).sort((a,b)=>
