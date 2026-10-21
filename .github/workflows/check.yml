@@ -4,14 +4,19 @@ on:
   pull_request:
 permissions:
   contents: read
+concurrency:
+  group: validation-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 jobs:
   native:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [22, 24]
+        node: ['22', '24.19.0']
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
@@ -22,11 +27,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Record exact source provenance
+        run: |
+          git rev-parse HEAD
+          git rev-parse 'HEAD^{tree}'
+          sha256sum pnpm-lock.yaml tests/requirements-browser.txt
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: '24.19.0'
       - run: npm install --global pnpm@11.25.0
       - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm build
       - run: node scripts/check-worker-build.mjs
@@ -34,6 +48,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - run: docker build --tag minhas-financas:ci .
       - name: Smoke test Node production image
         run: |
@@ -53,15 +69,20 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: '24.19.0'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: python -m pip install --disable-pip-version-check -r tests/requirements-browser.txt
       - run: python -m playwright install --with-deps chromium firefox webkit
+      - name: Independent offline driver diagnostic (not application scenarios)
+        run: python tests/offline-driver.browser.py
       - name: Test real UI in three browser engines
+        if: always()
         run: |
           node server.mjs > /tmp/minhas-financas-server.log 2>&1 &
           server_pid=$!
@@ -70,7 +91,7 @@ jobs:
             if curl --fail --silent http://127.0.0.1:3000/api/health; then break; fi
             sleep 1
           done
-          python tests/compat.browser.py --browser all --output /tmp/minhas-financas-browser-results/compat
+          python tests/compat.browser.py --browser all --require-all-scenarios --output /tmp/minhas-financas-browser-results/compat
       - name: Additional Chromium suites (counts kept separate)
         if: always()
         run: |
@@ -82,9 +103,23 @@ jobs:
             sleep 1
           done
           python tests/run-browser-suites.py --output /tmp/minhas-financas-browser-results/additional
-      - uses: actions/upload-artifact@v4
+      - name: Publish text reports without artifact or cache storage
         if: always()
-        with:
-          name: browser-results
-          path: /tmp/minhas-financas-browser-results
-          if-no-files-found: error
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path('/tmp/minhas-financas-browser-results')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              for relative in ('compat/compat-results.json', 'additional/suite-results.json'):
+                  path = root / relative
+                  if path.exists():
+                      report = json.loads(path.read_text())
+                      if relative.startswith('compat/'):
+                          report = {key: report[key] for key in ('passed', 'counts', 'engines')}
+                          for engine in report['engines']:
+                              engine.pop('scenarios', None)
+                      text = json.dumps(report, ensure_ascii=False, indent=2)
+                      print(relative + '\n' + text)
+                      summary.write('### ' + relative + '\n\n```json\n' + text + '\n```\n\n')
+          PY
