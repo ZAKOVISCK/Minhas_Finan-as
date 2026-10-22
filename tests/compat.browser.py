@@ -170,45 +170,59 @@ class Checks:
         expect(self.page.locator("#dialog")).not_to_be_visible()
 
     def choose_personal(self):
-        self.navigate("configuracoes")
-        if not self.page.locator("#access-primary").count():
-            self.page.reload(wait_until="domcontentloaded")
-            expect(self.page.locator("#main")).to_have_attribute("aria-busy", "false")
-            self.navigate("configuracoes")
+        expect(self.page.locator("#access-screen")).to_be_visible()
         self.page.locator("#access-primary").click()
 
     def first_access_empty_and_login(self):
-        expect(self.page.locator("#main h1")).to_contain_text("Olá")
-        expect(self.page.locator("#dialog")).not_to_be_visible()
-        assert self.page.locator('#access-screen').count()==0
-        assert self.page.locator('input[type="password"]').count()==0
+        expect(self.page.locator('#access-screen')).to_be_visible()
+        expect(self.page.locator('#main h1')).to_have_count(0)
         initial=self.page.evaluate("""async()=>{
           const S=await import('/storage.mjs'),db=await S.openDatabase();
-          try{return {local:await S.decodeRaw(await S.loadRaw(db,'local')),personal:await S.loadRaw(db,'personal'),demo:await S.loadRaw(db,'demo')}}finally{db.close()}
+          try{return Object.fromEntries(await Promise.all(['local','personal','demo'].map(async slot=>[slot,await S.loadRaw(db,slot)])))}finally{db.close()}
         }""")
-        for collection in ['accounts','entries','payments','transfers','trades','dividends']:
-            assert not initial['local'][collection]
-        for slot in ['personal','demo']:
+        for slot in ['local','personal','demo']:
             assert not initial[slot].get('head') and not initial[slot]['records']
         for width,height in [(320,568),(390,844),(768,1024),(1440,1000)]:
             self.page.set_viewport_size({'width':width,'height':height})
             assert self.page.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
-        assert self.page.evaluate("""async()=>{for(const size of [192,512]){const image=new Image();image.src="/icon-"+size+".png";await image.decode();if(image.naturalWidth!==size||image.naturalHeight!==size)return false;}return true;}""")
-        self.page.set_viewport_size({'width':1440,'height':1000})
-        self.page.screenshot(path=str(self.args.output/f'{self.engine}-open.png'),full_page=True)
-        self.navigate('contas');self.page.locator('[data-action="account"]').click()
-        self.fill('name','Conta local QA');self.fill('opening','100,00');self.save()
-        self.navigate('lancamentos');self.page.locator('.page-heading [data-action="entry"]').click()
-        self.fill('description','Despesa local QA');self.fill('amount','10,00');self.save()
+        theme=self.page.locator('#access-screen [data-theme-selector]')
+        theme.select_option('dark')
+        expect(self.page.locator('html')).to_have_attribute('data-theme','dark')
         self.page.reload(wait_until='domcontentloaded')
-        expect(self.page.locator('#main')).to_have_attribute('aria-busy','false')
-        expect(self.page.locator('#dialog')).not_to_be_visible()
-        saved=self.page.evaluate("""async()=>{const S=await import('/storage.mjs'),db=await S.openDatabase();try{return await S.decodeRaw(await S.loadRaw(db,'local'))}finally{db.close()}}""")
-        assert len(saved['accounts'])==1 and len(saved['entries'])==1
-        assert saved['accounts'][0]['name']=='Conta local QA' and saved['entries'][0]['amount']==1000
+        expect(self.page.locator('#access-primary')).to_be_enabled()
+        expect(self.page.locator('html')).to_have_attribute('data-theme','dark')
+        self.page.screenshot(path=str(self.args.output/f'{self.engine}-login-dark.png'),full_page=True)
+        self.page.locator('#access-primary').click()
+        self.fill('name','Pessoa QA');self.fill('password',PASSWORD);self.fill('confirmation',PASSWORD)
+        self.submit()
+        expect(self.page.locator('#dialog-title')).to_have_text('Nova conta')
+        expect(self.page.locator('#access-screen')).not_to_be_visible()
+        created=self.state()
+        for collection in ['accounts','entries','payments','transfers','trades','dividends']:
+            assert not created[collection]
+        self.fill('name','Conta protegida QA');self.fill('opening','100,00');self.save()
+        self.navigate('lancamentos');self.page.locator('.page-heading [data-action="entry"]').click()
+        self.fill('description','Despesa protegida QA');self.fill('amount','10,00');self.save()
+        before=self.raw_personal()
         self.navigate('configuracoes')
-        expect(self.page.locator('#access-primary')).to_have_count(0)
-        return {"opensWithoutLogin":True,"newSpaceFinanciallyEmpty":True,"localEditsPersistWithoutPassword":True,"brandLoads":True,"openViewportChecks":4}
+        self.page.locator('[data-theme-selector][aria-label="Tema do aplicativo"]').select_option('light')
+        expect(self.page.locator('html')).to_have_attribute('data-theme','light')
+        self.page.locator('[data-theme-selector][aria-label="Tema do aplicativo"]').select_option('dark')
+        assert self.raw_personal()==before,'Theme changes modified financial storage.'
+        self.page.locator('#lock-button').click()
+        expect(self.page.locator('#access-screen')).to_be_visible()
+        expect(self.page.locator('#main h1')).to_have_count(0)
+        self.choose_personal();self.fill('password','senha sintética incorreta 2026');self.submit()
+        expect(self.page.locator('#dialog-error')).to_be_visible()
+        assert self.raw_personal()==before,'Wrong password modified the vault.'
+        self.fill('password',PASSWORD);self.save()
+        reload_fixture(self.page,PASSWORD)
+        expect(self.page.locator('html')).to_have_attribute('data-theme','dark')
+        saved=self.state()
+        assert len(saved['accounts'])==1 and len(saved['entries'])==1
+        assert saved['accounts'][0]['name']=='Conta protegida QA' and saved['entries'][0]['amount']==1000
+        assert self.raw_personal()==before
+        return {"loginRequired":True,"newVaultFinanciallyEmpty":True,"wrongPasswordPreservesBytes":True,"lockAndReloadRequirePassword":True,"themesPersistAndDoNotMutateVault":True,"loginViewportChecks":4}
 
     def personal_form_and_focus(self):
         seed_fixture(self.page,password=PASSWORD)
@@ -276,7 +290,7 @@ class Checks:
             assert decoded["entries"][0]["description"] == PRIVATE_ENTRY and decoded["entries"][0]["amount"] == 1234
         self.page.locator("#lock-button").click()
         expect(self.page.locator("#main")).to_have_attribute("aria-busy", "false")
-        expect(self.page.locator("#mode-label")).to_have_text("Dados locais · sem senha")
+        expect(self.page.locator("#access-screen")).to_be_visible()
         expect(self.page.locator("#lock-button")).to_be_hidden()
         visible = self.page.locator("body").inner_text()
         fields = self.page.locator("input,textarea,select").evaluate_all("els => els.map(el=>el.value).join('\\n')")
@@ -348,28 +362,15 @@ class Checks:
             page.goto(self.args.base_url+'/',wait_until='domcontentloaded')
             expect(page.locator('#main')).to_have_attribute('aria-busy','false')
             page.evaluate("""async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}))}""")
-            context.set_offline(True)
-            page.reload(wait_until='domcontentloaded')
-            expect(page.locator('#main')).to_have_attribute('aria-busy','false')
-            expect(page.locator('#dialog')).not_to_be_visible()
-            expect(page.locator('#mode-label')).to_have_text('Dados locais · sem senha')
-            page.evaluate("location.hash='configuracoes'")
-            page.locator('[data-action="name"]').click()
-            page.locator('input[name="name"]').fill('Espaço local offline QA')
-            page.locator('#dialog-submit').click()
-            expect(page.locator('#dialog')).not_to_be_visible()
-            page.reload(wait_until='domcontentloaded')
-            expect(page.locator('#main')).to_have_attribute('aria-busy','false')
-            expect(page.locator('#main')).to_contain_text('Espaço local offline QA')
-            context.set_offline(False)
             seed_fixture(page,password=PASSWORD)
-            page.evaluate("""async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}))}""")
+            page.locator('.top-actions [data-theme-selector]').select_option('dark')
             reload_fixture(page,PASSWORD)
             expect(page.locator('#main')).to_have_attribute('aria-busy','false')
             assert page.locator('meta[name="application-version"]').get_attribute('content')==APP_VERSION
             context.set_offline(True)
             reload_fixture(page,PASSWORD)
             expect(page.locator('#main')).to_have_attribute('aria-busy','false')
+            expect(page.locator('html')).to_have_attribute('data-theme','dark')
             for route,label in ROUTES.items():
                 page.evaluate('(route)=>location.hash=route',route)
                 expect(page.locator('#breadcrumb')).to_have_text(label)
@@ -384,7 +385,7 @@ class Checks:
             expect(page.locator('#ledger-results')).to_contain_text('Registro sintético offline')
             assert not errors,errors
             context.set_offline(False)
-            return {'directOfflineOpeningWithoutPassword':True,'localOfflineEditPersisted':True,'serviceWorkerInstalled':True,'offlineReloadAndEightRoutesPassed':True,'offlineRecordPersisted':True,'viewport':{'width':390,'height':844}}
+            return {'offlineLoginRequired':True,'darkThemePersistsOffline':True,'serviceWorkerInstalled':True,'offlineReloadAndEightRoutesPassed':True,'offlineRecordPersisted':True,'viewport':{'width':390,'height':844}}
         finally:
             context.close()
 

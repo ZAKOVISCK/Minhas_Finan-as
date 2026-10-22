@@ -137,3 +137,49 @@ body.is-locked>.sidebar,body.is-locked>.app,body.is-locked>#mobile-nav,body.is-l
  .access-card h1{margin-top:25px}
 }
 @media(prefers-reduced-motion:reduce){.access-screen *{scroll-behavior:auto}}
+
+/* Theme controls remain available before and after vault unlock. */
+:root{color-scheme:light}
+.theme-control{display:flex;flex-direction:row;align-items:center;gap:9px;font-size:12px;color:var(--muted);font-weight:600}
+.theme-control select{width:auto;min-width:100px;background:var(--panel);border-color:var(--line);color:var(--ink);font-size:13px}
+.access-card>.theme-control{margin-top:22px;justify-content:flex-end}
+.settings-theme{margin-top:18px;justify-content:space-between}
+.settings-theme select{min-width:140px}
+@media(max-width:650px){.top-actions{gap:6px}.top-actions>.theme-control>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.top-actions>.theme-control select{min-width:92px;min-height:44px}.access-card>.theme-control{margin-top:18px}}
+
+/* A complete dark palette, including forms, tables, dialogs and locked access. */
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0d171f;--panel:#14222d;--ink:#e4edf5;--muted:#a1b4c5;--line:#2c4050;--green:#69dcc1;--mint:#183e37;--blue:#8ab8ff;--navy:#d7e8f6;--red:#ff9a88;--orange:#f3c477;--shadow:0 5px 24px #00000020;background:var(--bg);color:var(--ink)}
+:root[data-theme="dark"] body{background:var(--bg)}
+:root[data-theme="dark"] :is(input,select,.secondary,.sidebar,.mobile-extra .text-link){background:var(--panel);color:var(--ink);border-color:var(--line)}
+:root[data-theme="dark"] input::placeholder{color:var(--muted)}
+:root[data-theme="dark"] :is(.primary,.access-primary){background:#69dcc1;color:#09261e;box-shadow:none}
+:root[data-theme="dark"] .primary:hover{background:#8ce8d2}
+:root[data-theme="dark"] :is(.secondary:hover,.nav-item:hover,.icon-button:hover){background:#203441}
+:root[data-theme="dark"] :is(.nav-item.active,.mobile-nav button.active,.mode-label.personal,.avatar,.pill){color:#8be6cd;background:var(--mint)}
+:root[data-theme="dark"] .topbar{background:#14222dee}
+:root[data-theme="dark"] .mobile-nav{background:#14222df5;box-shadow:0 -3px 20px #00000028}
+:root[data-theme="dark"] .mobile-nav button{color:var(--muted)}
+:root[data-theme="dark"] .balance-card{background:linear-gradient(125deg,#14222d 55%,#16392f);border-top-color:#69dcc1}
+:root[data-theme="dark"] :is(.subtle-box,.mode-label,.list-icon){background:#203441;color:#c1d4e3}
+:root[data-theme="dark"] :is(.section-banner,.notice,.pill.blue){background:#1b324d;color:#b8d7ff;border-color:#355274}
+:root[data-theme="dark"] :is(.storage-notice,.update-notice,.notice.warn,.pill.warn){background:#3a2e1b;color:#ffda9a;border-color:#655331}
+:root[data-theme="dark"] :is(.undo-notice,.demo-banner){background:var(--mint);color:#a4ebd8;border-color:#2c5b4b}
+:root[data-theme="dark"] :is(.indicator-row,.list-row,th,td){border-color:var(--line)}
+:root[data-theme="dark"] :is(th,thead){background:#192c39;color:#bccddd}
+:root[data-theme="dark"] tbody tr:hover{background:#1b2d3a}
+:root[data-theme="dark"] .chart-svg text{fill:var(--muted)}
+:root[data-theme="dark"] .chart-svg line{stroke:var(--line)}
+:root[data-theme="dark"] .chart-svg path[stroke="#087c66"]{stroke:var(--green)}
+:root[data-theme="dark"] progress{background:#293d4c}
+:root[data-theme="dark"] progress::-webkit-progress-bar{background:#293d4c}
+:root[data-theme="dark"] progress::-webkit-progress-value{background:var(--green)}
+:root[data-theme="dark"] progress::-moz-progress-bar{background:var(--green)}
+:root[data-theme="dark"] dialog{background:var(--panel)}
+:root[data-theme="dark"] dialog::backdrop{background:#000a}
+:root[data-theme="dark"] .access-screen{background:radial-gradient(ellipse at 8% 20%,#153a32 0,transparent 58%),var(--bg)}
+:root[data-theme="dark"] .access-card{background:var(--panel);border-color:var(--line);box-shadow:0 20px 70px #0003}
+:root[data-theme="dark"] .access-headline{color:#ddf4ed}
+:root[data-theme="dark"] .access-headline span{color:#83ad9f}
+:root[data-theme="dark"] :is(.access-signature,.access-card-top){color:#a4c8b9}
+:root[data-theme="dark"] :focus-visible{outline-color:#8ab8ff}
+@media print{:root[data-theme="dark"]{color-scheme:light;--bg:#fff;--panel:#fff;--ink:#182b40;--muted:#516477;--line:#e2e8ef;--green:#087c66;--red:#b34230;--blue:#2566be}:root[data-theme="dark"] body,:root[data-theme="dark"] .balance-card{background:#fff;color:#182b40}:root[data-theme="dark"] :is(th,thead){background:#f2f6fa;color:#182b40}}

@@ -1,5 +1,13 @@
 ## 1.3.0 — abertura direta sem login
 
+## 1.4.0 — Entrada por senha e tema escuro
+
+- Restaura o acesso obrigatório ao cofre local, com cadastro, desbloqueio, saída e bloqueio automático; preserva AES-GCM, KDF, migrações e dados antigos.
+- Permite copiar registros da abertura sem login durante o cadastro ou por confirmação em Configurações; mantém a origem e seus checkpoints, sem misturar nem duplicar registros.
+- Adiciona temas Claro e Escuro na entrada, cabeçalho e configurações, com preferência no navegador e inclusão no cache offline.
+- Atualiza testes de login, migração, concorrência, temas e offline; mantém as suítes financeiras e a atualização segura de abas antigas.
+
+
 - Removida a tela inicial de criação/desbloqueio: o painel abre diretamente, sem login no ChatGPT ou senha do aplicativo.
 - Espaço `local` separado, inicialmente vazio, persistido sem senha no IndexedDB existente. Sem exemplos fictícios.
 - Cofres pessoais anteriores e seus checkpoints permanecem cifrados e inalterados. Desbloqueio opcional em Configurações; bloquear ou recarregar volta ao espaço local.

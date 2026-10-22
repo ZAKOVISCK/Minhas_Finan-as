@@ -1,6 +1,6 @@
-# Minhas Finanças 1.3.0
+# Minhas Finanças 1.4.0
 
-Finanças pessoais com abertura direta, sem login, controle financeiro, carteira e fontes econômicas públicas. Sem assinatura, credenciais bancárias ou APIs pagas.
+Finanças pessoais com entrada por senha local, temas claro e escuro, controle financeiro, carteira e fontes econômicas públicas. Sem assinatura, credenciais bancárias ou APIs pagas.
 
 Site original: https://minhas-financas-isaque.isaque-silvateixeira.chatgpt.site .
 
@@ -60,7 +60,7 @@ O mesmo domínio e o IndexedDB são mantidos. Schema 3, envelope 1, AES-GCM e KD
 
 Históricos de transferências, operações e proventos têm paginação independente e ações até o registro mais antigo. Os cálculos usam o conjunto completo, independentemente da página. A navegação de páginas não grava alterações financeiras.
 
-O cache `mf-core-1.3.0` instala todos os assets de forma atômica. **Atualizar aplicativo** ativa a versão aguardando; as outras abas preservam seus arquivos até recarregar. Não limpe os dados do site para atualizar.
+O cache `mf-core-1.4.0` instala todos os assets de forma atômica. **Atualizar aplicativo** ativa a versão aguardando; as outras abas preservam seus arquivos até recarregar. Não limpe os dados do site para atualizar.
 
 A rotina **Verify original public Site** (disparo manual ou criação de uma branch `codex/verify-public-*` depois da publicação) verifica novamente os mesmos cenários em produção, somente no domínio autorizado e com contextos novos e descartáveis; seus resultados não são somados aos da CI local. `node scripts/verify-public.mjs --commit <SHA>` confere bytes, cabeçalhos, APIs e controles de acesso.
 
@@ -68,13 +68,15 @@ A rotina **Verify original public Site** (disparo manual ou criação de uma bra
 
 BCB/IBGE, notícias IBGE, comunicados Fed e duas amostras brapi dependem de conexão e disponibilidade externa. Não há promessa de bolsa completa ou cotação em tempo real. Cofres, senhas e registros financeiros não são enviados às APIs. Backups externos continuam necessários.
 
-## Abertura direta — 1.3.0
+## Login e temas — 1.4.0
 
-O painel abre sem login, cadastro ou senha. O espaço `local` começa vazio e guarda os registros **sem criptografia por senha**, somente neste navegador. Os backups desse espaço são JSON legível; guarde-os em local protegido. Não existe sincronização em nuvem.
+O painel exige a senha do cofre a cada abertura/recarregamento. O primeiro acesso cria um cofre local AES-GCM/PBKDF2, vazio ou com uma cópia dos registros da versão 1.3.0, conforme a escolha no formulário. Cofres existentes continuam usando a senha original; cadastro nunca os substitui. Não há conta remota, sincronização ou autenticação bancária.
 
-Cofres `personal` existentes não são convertidos nem apagados. Em Configurações, **Desbloquear cofre anterior** permite abri-los com a senha original. Bloquear ou recarregar retorna ao espaço local. Os dois conjuntos permanecem separados. O desbloqueio serve apenas aos cofres anteriores, sem impedir o uso normal do app.
+A cópia original do espaço `local` da 1.3.0 é preservada sem alterações, inclusive seu checkpoint. Ela continua **sem criptografia por senha** e não é apresentada no painel sem desbloquear o cofre. Em Configurações, “Dados da versão sem login” permite exportar essa origem ou copiar seu conteúdo para o cofre, mediante confirmação explícita de substituição. A importação preserva o checkpoint anterior do cofre e não soma registros; faça um backup antes. Esta versão não apaga automaticamente origens para preservar recuperação e abas antigas.
 
-Backups criptografados continuam sendo lidos com a senha do arquivo. Ao restaurar no espaço local, a confirmação informa que o conteúdo restaurado será salvo sem senha e que o cofre anterior permanece separado. Nenhuma conversão ocorre automaticamente. Na ausência/falha do IndexedDB, a interface continua acessível, mas as alterações ficam bloqueadas.
+O botão de cadeado ou “Sair e bloquear” encerra o acesso e remove os dados da interface. Bloqueio automático: 10 minutos de inatividade ou 2 minutos em segundo plano. Backups novos do cofre são criptografados; os anteriores seguem compatíveis com suas senhas originais. Na ausência/falha do IndexedDB, a tela de entrada fica acessível, mas criar/desbloquear fica bloqueado, sem reinicializar dados.
+
+O seletor **Tema** aparece na entrada e no cabeçalho. Em **Configurações → Aparência**, escolha Claro ou Escuro. A preferência `mf-theme` fica no armazenamento local do navegador e é independente dos dados financeiros; funciona também offline. Se o navegador impedir preferências, a troca vale para a sessão. O service worker inclui `theme.mjs` no precache atômico da 1.4.0.
 
 ### Retirada dos exemplos
 

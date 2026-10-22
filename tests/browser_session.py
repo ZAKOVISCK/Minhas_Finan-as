@@ -4,8 +4,7 @@ TEST_PASSWORD = "senha sintética exclusiva das fixtures QA 2026"
 
 def unlock_fixture(page, password=TEST_PASSWORD):
     expect(page.locator("#main")).to_have_attribute("aria-busy", "false")
-    page.evaluate("location.hash='configuracoes'")
-    expect(page.locator('#breadcrumb')).to_have_text('Configurações')
+    expect(page.locator("#access-screen")).to_be_visible()
     page.locator("#access-primary").click()
     expect(page.locator("#dialog-title")).to_have_text("Abrir cofre pessoal")
     page.locator('#dialog-form input[name="password"]').fill(password)

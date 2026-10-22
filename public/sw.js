@@ -1,9 +1,9 @@
-const VERSION = 'mf-core-1.3.0';
+const VERSION = 'mf-core-1.4.0';
 const META_CACHE = 'mf-worker-meta';
 const META_ROOT = new URL('/__mf_worker__/', self.location.origin).href;
 const FILES = [
   '/', '/index.html', '/styles.css', '/app.js', '/finance.mjs', '/legacy-finance.mjs',
-  '/access.mjs', '/storage.mjs', '/crypto.mjs', '/views.mjs', '/imports.mjs', '/market.mjs', '/form-utils.mjs',
+  '/access.mjs', '/theme.mjs', '/storage.mjs', '/crypto.mjs', '/views.mjs', '/imports.mjs', '/market.mjs', '/form-utils.mjs',
   '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png',
 ];
 

@@ -1,5 +1,21 @@
 import { demo, emptyState, validateState } from "./finance.mjs";
 import { loadRaw, decodeRaw, previousRaw, saveSlot, removeDemoSlot, StorageConflict } from "./storage.mjs";
+import { newKdf, deriveKey } from "./crypto.mjs";
+
+/** Create a local password-protected account without altering any older slot.
+ * A selected 1.3 snapshot is copied once, retaining every financial identifier.
+ */
+export async function createPersonalVault(db, { name, password, includeLocal = false, operationId }) {
+  const existing = await loadRaw(db, "personal");
+  if (existing.head || existing.records.length || existing.journal) throw new StorageConflict();
+  if (typeof password !== "string" || password.length < 12 || password.length > 256)
+    throw new Error("Use uma senha de 12 a 256 caracteres.");
+  const local = includeLocal ? await decodeRaw(await loadRaw(db, "local")) : null;
+  const fresh = local ? validateState({ ...local, name }) : emptyState(name);
+  const kdf = newKdf(), key = await deriveKey(password, kdf);
+  const state = await saveSlot(db, "personal", null, fresh, -1, { key, kdf, operationId });
+  return { state, key, kdf, copiedLocal: !!local };
+}
 
 /** A separate open workspace. Existing encrypted vaults are never rewritten. */
 export async function openLocalSpace(db) {
