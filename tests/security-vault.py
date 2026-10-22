@@ -111,7 +111,7 @@ class VaultSecurity(unittest.TestCase):
         self.page.locator("#search").fill(PRIVATE_ENTRY)
 
     def unlock(self):
-        self.navigate('configuracoes')
+        expect(self.page.locator('#access-screen')).to_be_visible()
         self.page.locator('#access-primary').click()
         expect(self.page.locator("#dialog-title")).to_have_text("Abrir cofre pessoal")
         self.page.locator('#dialog input[name="password"]').fill(PASSWORD)
@@ -168,7 +168,7 @@ class VaultSecurity(unittest.TestCase):
             crypto.subtle.encrypt = () => Promise.reject(new Error('Falha sintética de criptografia'));
         }""")
         self.page.locator("#lock-button").click()
-        expect(self.page.locator("#mode-label")).to_have_text("Dados locais · sem senha")
+        expect(self.page.locator("#access-screen")).to_be_visible()
         self.assert_private_dom_cleared()
         self.page.evaluate("delete crypto.subtle.encrypt")
         expect(self.page.locator("#main")).to_have_attribute("aria-busy", "false")
@@ -198,9 +198,10 @@ class VaultSecurity(unittest.TestCase):
         self.context.add_init_script("Object.defineProperty(window, 'indexedDB', {value: undefined})")
         self.start()
         expect(self.page.locator("#main")).to_have_attribute("aria-busy", "false")
-        expect(self.page.locator("#storage-notice")).to_be_visible()
-        expect(self.page.locator("#storage-notice")).to_contain_text("preservados")
-        self.page.locator('.page-heading [data-action="entry"]').click()
+        expect(self.page.locator("#access-screen")).to_be_visible()
+        expect(self.page.locator("#access-status")).to_contain_text("preservados")
+        expect(self.page.locator("#access-primary")).to_be_disabled()
+        expect(self.page.locator('.page-heading [data-action="entry"]')).to_have_count(0)
         expect(self.page.locator("#main")).to_have_attribute("aria-busy", "false")
         self.page.evaluate("""async () => {
             const channel = new BroadcastChannel('minhas-financas-v3');
@@ -208,7 +209,7 @@ class VaultSecurity(unittest.TestCase):
             await new Promise(resolve => setTimeout(resolve, 100));
             channel.close();
         }""")
-        self.assertNotIn("Outra aba", self.page.locator("#storage-notice").inner_text())
+        self.assertNotIn("Outra aba", self.page.locator("#access-status").inner_text())
         expect(self.page.locator("#dialog")).not_to_be_visible()
         self.assertEqual(self.errors, [])
 
